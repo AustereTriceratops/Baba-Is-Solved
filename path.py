@@ -2,11 +2,11 @@ from z3 import Array, IntSort, Int, Store, Select, And, Or, Not, Implies, Solver
 
 ### env encoding
 # 0: empty
-# 1: self
+# 1: obstacle
 # 2: goal
-# 3: obstacle
 
-def findPath(environment: list[list[int]], num_steps: int):
+### start_pos: index of the player's starting position 0 <= start_pos < n_sq
+def findPath(environment: list[list[int]], start_pos: int, num_steps: int):
     n = len(environment)
     n_sq = n*n
     
@@ -24,7 +24,7 @@ def findPath(environment: list[list[int]], num_steps: int):
     player_positions = [Int(f'pos_{i}') for i in range(num_steps + 1)]
     goal_pos = Int('goal_pos')
     
-    s.add(Select(env, player_positions[0]) == 1)
+    s.add(player_positions[0] == start_pos)
     s.add(Select(env, goal_pos) == 2)
     
     for i in range(num_steps + 1):
@@ -58,19 +58,19 @@ def findPath(environment: list[list[int]], num_steps: int):
         s.add(Implies(move == 0, player_positions[i+1] == prev_pos))
         
         s.add(Implies(move == 1, player_positions[i+1] == prev_pos - 1))
-        s.add(Implies(move == 1, Select(env, prev_pos - 1) != 3))
+        s.add(Implies(move == 1, Select(env, prev_pos - 1) != 1))
         s.add(Implies(move == 1, prev_pos % n >= 1))
         
         s.add(Implies(move == 2, player_positions[i+1] == prev_pos + 1))
-        s.add(Implies(move == 2, Select(env, prev_pos + 1) != 3))
+        s.add(Implies(move == 2, Select(env, prev_pos + 1) != 1))
         s.add(Implies(move == 2, prev_pos % n < n - 1))
         
         s.add(Implies(move == 3, player_positions[i+1] == prev_pos + n))
-        s.add(Implies(move == 3, Select(env, prev_pos + n) != 3))
+        s.add(Implies(move == 3, Select(env, prev_pos + n) != 1))
         s.add(Implies(move == 3, prev_pos < n_sq - n))
         
         s.add(Implies(move == 4, player_positions[i+1] == prev_pos - n))
-        s.add(Implies(move == 4, Select(env, prev_pos - n) != 3))
+        s.add(Implies(move == 4, Select(env, prev_pos - n) != 1))
         s.add(Implies(move == 4, prev_pos >= n))
     
     ### check satisfiability and return appropriate data
