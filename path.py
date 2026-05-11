@@ -1,5 +1,6 @@
 from z3 import Array, IntSort, Int, Store, Select, And, Or, Not, Implies, Solver, sat
 
+### env encoding
 # 0: empty
 # 1: self
 # 2: goal
@@ -77,6 +78,10 @@ def findPath(environment: list[list[int]], num_steps: int):
     
     if result == sat:
         m = s.model()
+        
+        # for d in m.decls():
+        #     if d.name() == 'pos_0':
+        #         print(m[d])
         
         return [m[player_positions[i]].as_long() for i in range(num_steps + 1)]
     else:
