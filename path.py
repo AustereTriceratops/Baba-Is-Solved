@@ -1,4 +1,4 @@
-from z3 import Array, IntSort, Int, Store, Select, And, Or, Not, Implies, Solver, sat
+from z3 import Array, IntSort, Int, Select, Implies, Solver, sat
 
 ### env encoding
 # 0: empty
@@ -18,7 +18,7 @@ def findPath(environment: list[list[int]], start_pos: int, num_steps: int):
     # initialize the environment
     for i in range(n):
         for j in range(n):
-            s.add(Select(env, 3*i + j) == environment[i][j])
+            s.add(Select(env, n*i + j) == environment[i][j])
 
     ### positions
     player_positions = [Int(f'pos_{i}') for i in range(num_steps + 1)]

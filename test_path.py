@@ -85,10 +85,11 @@ class TestPath(unittest.TestCase):
         self.assertIsNotNone(findPath(env, 1, 5))
         
         env = [
-            [0, 0, 0],
-            [0, 1, 0],
-            [2, 1, 0]
+            [0, 0, 0, 0],
+            [0, 1, 0, 0],
+            [2, 1, 0, 0],
+            [0, 1, 0, 0],
         ]
         
-        self.assertIsNone(findPath(env, 8, 5))
-        self.assertIsNotNone(findPath(env, 8, 6))
+        self.assertIsNone(findPath(env, 7, 5))
+        self.assertIsNotNone(findPath(env, 7, 6))
