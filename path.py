@@ -7,7 +7,7 @@ from z3 import Array, IntSort, Int, Store, Select, And, Or, Not, Implies, Solver
 
 def findPath(environment: list[list[int]], num_steps: int):
     n = len(environment)
-    n_sq = n**n
+    n_sq = n*n
     
     s = Solver()
     
@@ -16,13 +16,8 @@ def findPath(environment: list[list[int]], num_steps: int):
     
     # initialize the environment
     for i in range(n):
-        for j in range(j):
+        for j in range(n):
             s.add(Select(env, 3*i + j) == environment[i][j])
-    
-    # for env in envs:
-    #     for i in range(n_sq):
-    #         s.add(Select(env, i) >= 0)
-    #         s.add(Select(env, i) < 4)
 
     ### positions
     player_positions = [Int(f'pos_{i}') for i in range(num_steps + 1)]
@@ -30,6 +25,13 @@ def findPath(environment: list[list[int]], num_steps: int):
     
     s.add(Select(env, player_positions[0]) == 1)
     s.add(Select(env, goal_pos) == 2)
+    
+    for i in range(num_steps + 1):
+        s.add(player_positions[i] >= 0)
+        s.add(player_positions[i] < n_sq)
+    
+    s.add(goal_pos >= 0)
+    s.add(goal_pos < n_sq)
     
     # player must be able to reach the goal position after num_steps steps
     s.add(player_positions[num_steps] == goal_pos)
@@ -48,14 +50,35 @@ def findPath(environment: list[list[int]], num_steps: int):
         
         prev_pos = player_positions[i]
         
+        # if the player is at the goal position, don't bother moving
+        s.add(Implies(prev_pos == goal_pos, move == 0))
+        
+        # movement conditions
         s.add(Implies(move == 0, player_positions[i+1] == prev_pos))
+        
+        s.add(Implies(move == 1, player_positions[i+1] == prev_pos - 1))
+        s.add(Implies(move == 1, Select(env, prev_pos - 1) != 3))
+        s.add(Implies(move == 1, prev_pos % n >= 1))
+        
+        s.add(Implies(move == 2, player_positions[i+1] == prev_pos + 1))
+        s.add(Implies(move == 2, Select(env, prev_pos + 1) != 3))
+        s.add(Implies(move == 2, prev_pos % n < n - 1))
+        
+        s.add(Implies(move == 3, player_positions[i+1] == prev_pos + n))
+        s.add(Implies(move == 3, Select(env, prev_pos + n) != 3))
+        s.add(Implies(move == 3, prev_pos < n_sq - n))
+        
+        s.add(Implies(move == 4, player_positions[i+1] == prev_pos - n))
+        s.add(Implies(move == 4, Select(env, prev_pos - n) != 3))
+        s.add(Implies(move == 4, prev_pos >= n))
     
+    ### check satisfiability and return appropriate data
     result = s.check()
     
     if result == sat:
         m = s.model()
         
-        return [float(m[player_positions[i]].to_fraction()) for i in range(num_steps + 1)]
+        return [m[player_positions[i]].as_long() for i in range(num_steps + 1)]
     else:
         return None
         

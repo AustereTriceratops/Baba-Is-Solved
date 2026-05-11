@@ -9,21 +9,21 @@ class TestPath(unittest.TestCase):
             [2, 0, 0],
             [0, 0, 0],
         ]
-        self.assertIsNotNone(findPath(env), 1)
+        self.assertIsNotNone(findPath(env, 1))
         
         env = [
             [1, 2, 0],
             [0, 0, 0],
             [0, 0, 0],
         ]
-        self.assertIsNotNone(findPath(env), 1)
+        self.assertIsNotNone(findPath(env, 1))
         
         env = [
             [1, 0, 0],
             [0, 0, 0],
             [0, 0, 2],
         ]
-        self.assertIsNotNone(findPath(env), 4)
+        self.assertIsNotNone(findPath(env, 4))
     
     
     def test_obstacles(self):
@@ -32,25 +32,25 @@ class TestPath(unittest.TestCase):
             [3, 3, 3],
             [0, 0, 2],
         ]
-        self.assertIsNone(findPath(env), 4)
+        self.assertIsNone(findPath(env, 4))
         
         env = [
             [1, 3, 0],
             [3, 3, 0],
             [0, 0, 2],
         ]
-        self.assertIsNone(findPath(env), 4)
+        self.assertIsNone(findPath(env, 4))
         
         env = [
             [1, 3, 0],
             [0, 3, 0],
             [0, 3, 2],
         ]
-        self.assertIsNone(findPath(env), 4)
+        self.assertIsNone(findPath(env, 4))
         
         env = [
             [1, 3, 0],
             [3, 2, 0],
             [0, 0, 0],
         ]
-        self.assertIsNone(findPath(env), 4)
+        self.assertIsNone(findPath(env, 4))
