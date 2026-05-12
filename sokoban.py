@@ -1,5 +1,7 @@
 from z3 import Array, IntSort, Int, Select, Implies, And, Solver, sat
 
+from path import reachable
+
 ### env
 # 0: empty
 # 1: wall
@@ -62,7 +64,8 @@ def findSolution(level: list[list[int]], start_pos: int, num_steps: int):
     
     # satisfiability: goal is reachable for player
     # TODO: add this condition
-    # s.add(Reachable(envs[num_steps], player_positions[num_steps], goal_pos))
+    is_reachable, player_subpositions = reachable(n, envs[num_steps], player_positions[num_steps], goal_pos, num_steps, meta_index=0)
+    s.add(is_reachable)
     
     # for now, only worry about specifying single pushables (no stacks, only one pushable gets pushed)
     # TODO: generalize to stacks
@@ -87,7 +90,7 @@ def findSolution(level: list[list[int]], start_pos: int, num_steps: int):
     
         # level state update
         for j in range(n_sq):
-            s.add(Implies(And(j != src, j != dst)), Select(envs[i+1], j) == Select(envs[i], j))
+            s.add(Implies(And(j != src, j != dst), Select(envs[i+1], j) == Select(envs[i], j)))
         
         s.add(Select(envs[i+1], dst) == 3)
         s.add(Select(envs[i+1], src) == 0)

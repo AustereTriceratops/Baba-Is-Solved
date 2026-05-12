@@ -1,26 +1,21 @@
-from z3 import Array, IntSort, Int, Select, Implies, And, Solver, sat
+from z3 import Array, IntSort, Int, Select, Implies, And, Solver, sat, ArrayRef, IntNumRef
 
 ### env encoding
 # 0: empty
 # 1: obstacle
 # 2: goal
-def reachable(n: int, env: Array, start_pos: int, num_steps : int = 20, meta_index: int = 0):
+def reachable(n: int, env: ArrayRef, start_pos: IntNumRef | int, goal_pos: IntNumRef, num_steps : int = 20, meta_index: int = 0):
     constraints = []
     n_sq = n**2
     
     ### positions
     player_positions = [Int(f'pos_{meta_index}_{i}') for i in range(num_steps + 1)]
-    goal_pos = Int('goal_pos_{meta_index}')
     
     constraints.append(player_positions[0] == start_pos)
-    constraints.append(Select(env, goal_pos) == 2)
     
     for i in range(num_steps + 1):
         constraints.append(player_positions[i] >= 0)
         constraints.append(player_positions[i] < n_sq)
-    
-    constraints.append(goal_pos >= 0)
-    constraints.append(goal_pos < n_sq)
     
     # player must be able to reach the goal position after num_steps steps
     constraints.append(player_positions[num_steps] == goal_pos)
@@ -66,7 +61,7 @@ def reachable(n: int, env: Array, start_pos: int, num_steps : int = 20, meta_ind
 ### start_pos: index of the player's starting position 0 <= start_pos < n_sq
 def findPath(environment: list[list[int]], start_pos: int, num_steps: int):
     n = len(environment)
-    n_sq = n*n
+    n_sq = n**2
     
     s = Solver()
     
@@ -78,7 +73,13 @@ def findPath(environment: list[list[int]], start_pos: int, num_steps: int):
         for j in range(n):
             s.add(Select(env, n*i + j) == environment[i][j])
     
-    is_reachable, player_positions = reachable(n, env, start_pos, num_steps)
+    # initialize goal tile
+    goal = Int(f'goal_pos_{0}')
+    s.add(Select(env, goal) == 2)
+    s.add(goal >= 0)
+    s.add(goal < n_sq)
+    
+    is_reachable, player_positions = reachable(n, env, start_pos, goal, num_steps)
     s.add(is_reachable)
     
     ### check satisfiability and return appropriate data
@@ -86,10 +87,6 @@ def findPath(environment: list[list[int]], start_pos: int, num_steps: int):
     
     if result == sat:
         m = s.model()
-        
-        # for d in m.decls():
-        #     if d.name() == 'pos_0':
-        #         print(m[d])
         
         return [m[player_positions[i]].as_long() for i in range(num_steps + 1)]
     else:
