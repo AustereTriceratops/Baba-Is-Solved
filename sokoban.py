@@ -45,27 +45,22 @@ def findSolution(level: list[list[int]], start_pos: int, num_steps: int):
     s.add(Select(envs[0], goal_pos) == 2)
     
     ### moves
-    # 0: stay
-    # 1: left
-    # 2: right
-    # 3: up
-    # 4: down
+    # 0: left
+    # 1: right
+    # 2: up
+    # 3: down
     moves = [Int(f'move_{i}') for i in range(num_steps)]
     moves_src = [Int(f'src_{i}') for i in range(num_steps)]
     moves_dst = [Int(f'dst_{i}') for i in range(num_steps)]
     
+    # limits on these values and indices
     for i in range(num_steps):
         s.add(moves[i] >= 0)
-        s.add(moves[i] < 5)
+        s.add(moves[i] < 4)
         s.add(moves_src[i] >= 0)
         s.add(moves_src[i] < n_sq)
         s.add(moves_dst[i] >= 0)
         s.add(moves_dst[i] < n_sq)
-    
-    # satisfiability: goal is reachable for player
-    # TODO: add this condition
-    is_reachable, player_subpositions = reachable(n, envs[num_steps], player_positions[num_steps], goal_pos, num_steps, meta_index=0)
-    s.add(is_reachable)
     
     # for now, only worry about specifying single pushables (no stacks, only one pushable gets pushed)
     # TODO: generalize to stacks
@@ -78,15 +73,36 @@ def findSolution(level: list[list[int]], start_pos: int, num_steps: int):
         s.add(Select(envs[i], src) == 3)
         # pushables can only be moved to empty tiles
         s.add(Select(envs[i], dst) == 0)
-        # opposite tile must be traversible and TODO: reachable
+        # opposite tile must be traversible and reachable
         s.add(Select(envs[i], opp) == 0)
-        # s.add(Reachable(envs[i], player_positions[i], opp))
+        is_reachable, _ = reachable(n, envs[i], player_positions[i], opp, 20, meta_index=i+1)
+        s.add(is_reachable)
         
-        # search should effectively stop and set all upcoming moves to 0 as soon as the goal positoon is reachable
-        #s.add(Implies(Reachable(envs[i], player_positions[i], goal_pos), moves[i] == 0))
+        # # search should effectively stop and set all upcoming moves to 0 as soon as the goal positoon is reachable
+        # # TODO: implement early stopping in some way like in path.py?
+        # is_reachable, _ = reachable(n, envs[i], player_positions[i], opp, 20, meta_index=num_steps+i+1)
+        # s.add(Implies(is_reachable, moves[i] == 0))
         
-        # TODO: add rules relating src and dst according to moves[i]
-        # TODO: set opp appropriately too
+        ### moves
+        s.add(Implies(moves[i] == 0, dst == src - 1))
+        s.add(Implies(moves[i] == 0, opp == src + 1))
+        s.add(Implies(moves[i] == 0, src % n > 0))
+        s.add(Implies(moves[i] == 0, src % n < n - 1))
+        
+        s.add(Implies(moves[i] == 1, dst == src + 1))
+        s.add(Implies(moves[i] == 1, opp == src - 1))
+        s.add(Implies(moves[i] == 1, src % n > 0))
+        s.add(Implies(moves[i] == 1, src % n < n - 1))
+        
+        s.add(Implies(moves[i] == 2, dst == src + n))
+        s.add(Implies(moves[i] == 2, opp == src - n))
+        s.add(Implies(moves[i] == 2, src > n - 1))
+        s.add(Implies(moves[i] == 2, src < n_sq - n))
+        
+        s.add(Implies(moves[i] == 3, dst == src - n))
+        s.add(Implies(moves[i] == 3, opp == src + n))
+        s.add(Implies(moves[i] == 3, src > n - 1))
+        s.add(Implies(moves[i] == 3, src < n_sq - n))
     
         # level state update
         for j in range(n_sq):
@@ -95,6 +111,10 @@ def findSolution(level: list[list[int]], start_pos: int, num_steps: int):
         s.add(Select(envs[i+1], dst) == 3)
         s.add(Select(envs[i+1], src) == 0)
         s.add(player_positions[i+1] == src)
+    
+    ### satisfiability: goal is reachable for player
+    is_reachable, _ = reachable(n, envs[num_steps], player_positions[num_steps], goal_pos, 20, meta_index=0)
+    s.add(is_reachable)
     
     result = s.check()
     

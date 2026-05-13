@@ -39,6 +39,13 @@ class TestPath(unittest.TestCase):
             [0, 0, 2],
         ]
         self.assertIsNotNone(findPath(env, 0, 4))
+        
+        env = [
+            [31, 3, 0],
+            [3, 7, 2],
+            [1146, 3, 3],
+        ]
+        self.assertIsNotNone(findPath(env, 2, 1))
     
     
     def test_obstacles(self):
@@ -93,3 +100,26 @@ class TestPath(unittest.TestCase):
         
         self.assertIsNone(findPath(env, 7, 5))
         self.assertIsNotNone(findPath(env, 7, 6))
+    
+    # TODO: way too slow
+    # def test_large_move_numbers(self):
+    #     env = [
+    #         [0, 0, 0, 0],
+    #         [0, 1, 0, 0],
+    #         [2, 1, 0, 0],
+    #         [0, 1, 0, 0],
+    #     ]
+        
+    #     self.assertIsNotNone(findPath(env, 7, 20))
+        
+    #     env = [
+    #         [0, 1, 0, 0, 0, 1, 2],
+    #         [0, 1, 0, 1, 0, 1, 0],
+    #         [0, 1, 0, 1, 0, 1, 0],
+    #         [0, 1, 0, 1, 0, 1, 0],
+    #         [0, 1, 0, 1, 0, 1, 0],
+    #         [0, 1, 0, 1, 0, 1, 0],
+    #         [0, 0, 0, 1, 0, 0, 0],
+    #     ]
+        
+    #     self.assertIsNotNone(findPath(env, 0, 40))

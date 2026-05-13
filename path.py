@@ -1,5 +1,6 @@
 from z3 import Array, IntSort, Int, Select, Implies, And, Solver, sat, ArrayRef, IntNumRef
 
+# TODO: metrics for speed
 ### env encoding
 # 0: empty
 # 1: obstacle
@@ -55,6 +56,13 @@ def reachable(n: int, env: ArrayRef, start_pos: IntNumRef | int, goal_pos: IntNu
         constraints.append(Implies(move == 4, player_positions[i+1] == prev_pos - n))
         constraints.append(Implies(move == 4, Select(env, prev_pos - n) != 1))
         constraints.append(Implies(move == 4, prev_pos >= n))
+        
+        # no backtracking
+        if i > 0:
+            constraints.append(Implies(moves[i-1] == 1, move != 2))
+            constraints.append(Implies(moves[i-1] == 2, move != 1))
+            constraints.append(Implies(moves[i-1] == 3, move != 4))
+            constraints.append(Implies(moves[i-1] == 4, move != 3))
     
     return And(constraints), player_positions
 
