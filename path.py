@@ -1,25 +1,28 @@
 from z3 import Array, IntSort, Int, Select, Implies, And, Solver, sat, ArrayRef, IntNumRef
 
-# TODO: metrics for speed
 ### env encoding
 # 0: empty
 # 1: obstacle
 # 2: goal
-def reachable(n: int, env: ArrayRef, start_pos: IntNumRef | int, goal_pos: IntNumRef, num_steps : int = 20, meta_index: int = 0):
+def reachable(n: IntNumRef, env: ArrayRef, start_pos: IntNumRef | int, goal_pos: IntNumRef, num_steps : int = 20, meta_index: int = 0):
     constraints = []
-    n_sq = n**2
     
     ### positions
-    player_positions = [Int(f'pos_{meta_index}_{i}') for i in range(num_steps + 1)]
+    #player_positions = [Int(f'pos_{meta_index}_{i}') for i in range(num_steps + 1)]
+    x_positions = [Int(f'x_{meta_index}_{i}') for i in range(num_steps + 1)]
+    y_positions = [Int(f'y_{meta_index}_{i}') for i in range(num_steps + 1)]
     
-    constraints.append(player_positions[0] == start_pos)
+    constraints.append(x_positions[0] == start_pos % n)
+    constraints.append(y_positions[0] == start_pos / n)
     
     for i in range(num_steps + 1):
-        constraints.append(player_positions[i] >= 0)
-        constraints.append(player_positions[i] < n_sq)
+        constraints.append(x_positions[i] >= 0)
+        constraints.append(x_positions[i] < n)
+        constraints.append(y_positions[i] >= 0)
+        constraints.append(y_positions[i] < n)
     
     # player must be able to reach the goal position after num_steps steps
-    constraints.append(player_positions[num_steps] == goal_pos)
+    constraints.append(x_positions[num_steps] + n*y_positions[num_steps] == goal_pos)
     
     ### movement
     # 0: stay
@@ -33,38 +36,36 @@ def reachable(n: int, env: ArrayRef, start_pos: IntNumRef | int, goal_pos: IntNu
         constraints.append(move >= 0)
         constraints.append(move < 5)
         
-        prev_pos = player_positions[i]
+        prev_x = x_positions[i]
+        prev_y = y_positions[i]
         
         # if the player is at the goal position, don't bother moving
-        constraints.append(Implies(prev_pos == goal_pos, move == 0))
+        constraints.append(Implies(prev_x + n*prev_y == goal_pos, move == 0))
         
         # movement conditions
-        constraints.append(Implies(move == 0, player_positions[i+1] == prev_pos))
+        constraints.append(Implies(move == 0, And(
+            x_positions[i+1] == prev_x, y_positions[i+1] == prev_y
+        )))
         
-        constraints.append(Implies(move == 1, player_positions[i+1] == prev_pos - 1))
-        constraints.append(Implies(move == 1, Select(env, prev_pos - 1) != 1))
-        constraints.append(Implies(move == 1, prev_pos % n >= 1))
+        constraints.append(Implies(move == 1, And(
+            x_positions[i+1] == prev_x - 1, y_positions[i+1] == prev_y, prev_x >= 1
+        )))
         
-        constraints.append(Implies(move == 2, player_positions[i+1] == prev_pos + 1))
-        constraints.append(Implies(move == 2, Select(env, prev_pos + 1) != 1))
-        constraints.append(Implies(move == 2, prev_pos % n < n - 1))
+        constraints.append(Implies(move == 2, And(
+            x_positions[i+1] == prev_x + 1, y_positions[i+1] == prev_y, prev_x < n - 1
+        )))
         
-        constraints.append(Implies(move == 3, player_positions[i+1] == prev_pos + n))
-        constraints.append(Implies(move == 3, Select(env, prev_pos + n) != 1))
-        constraints.append(Implies(move == 3, prev_pos < n_sq - n))
+        constraints.append(Implies(move == 3, And(
+            y_positions[i+1] == prev_y + 1, x_positions[i+1] == prev_x, prev_y < n - 1
+        )))
         
-        constraints.append(Implies(move == 4, player_positions[i+1] == prev_pos - n))
-        constraints.append(Implies(move == 4, Select(env, prev_pos - n) != 1))
-        constraints.append(Implies(move == 4, prev_pos >= n))
+        constraints.append(Implies(move == 4, And(
+            y_positions[i+1] == prev_y - 1, x_positions[i+1] == prev_x, prev_y >= 1
+        )))
         
-        # no backtracking
-        if i > 0:
-            constraints.append(Implies(moves[i-1] == 1, move != 2))
-            constraints.append(Implies(moves[i-1] == 2, move != 1))
-            constraints.append(Implies(moves[i-1] == 3, move != 4))
-            constraints.append(Implies(moves[i-1] == 4, move != 3))
+        constraints.append(Select(env, x_positions[i+1] + n*y_positions[i+1]) != 1)
     
-    return And(constraints), player_positions
+    return And(constraints), (x_positions, y_positions)
 
 ### start_pos: index of the player's starting position 0 <= start_pos < n_sq
 def findPath(environment: list[list[int]], start_pos: int, num_steps: int):
@@ -72,6 +73,9 @@ def findPath(environment: list[list[int]], start_pos: int, num_steps: int):
     n_sq = n**2
     
     s = Solver()
+    
+    n_z3 = Int('n')
+    s.add(n_z3 == n)
     
     ### environment states
     env = Array(f'env', IntSort(), IntSort())
@@ -87,7 +91,7 @@ def findPath(environment: list[list[int]], start_pos: int, num_steps: int):
     s.add(goal >= 0)
     s.add(goal < n_sq)
     
-    is_reachable, player_positions = reachable(n, env, start_pos, goal, num_steps)
+    is_reachable, (x_positions, y_positions) = reachable(n_z3, env, start_pos, goal, num_steps)
     s.add(is_reachable)
     
     ### check satisfiability and return appropriate data
@@ -96,7 +100,7 @@ def findPath(environment: list[list[int]], start_pos: int, num_steps: int):
     if result == sat:
         m = s.model()
         
-        return [m[player_positions[i]].as_long() for i in range(num_steps + 1)]
+        return [(m[x_positions[i]].as_long(), m[y_positions[i]].as_long()) for i in range(num_steps + 1)]
     else:
         return None
         

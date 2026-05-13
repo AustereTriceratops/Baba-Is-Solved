@@ -102,24 +102,24 @@ class TestPath(unittest.TestCase):
         self.assertIsNotNone(findPath(env, 7, 6))
     
     # TODO: way too slow
-    # def test_large_move_numbers(self):
-    #     env = [
-    #         [0, 0, 0, 0],
-    #         [0, 1, 0, 0],
-    #         [2, 1, 0, 0],
-    #         [0, 1, 0, 0],
-    #     ]
+    def test_large_move_numbers(self):
+        env = [
+            [0, 0, 0, 0],
+            [0, 1, 0, 0],
+            [2, 1, 0, 0],
+            [0, 1, 0, 0],
+        ]
         
-    #     self.assertIsNotNone(findPath(env, 7, 20))
+        self.assertIsNotNone(findPath(env, 7, 20))
         
-    #     env = [
-    #         [0, 1, 0, 0, 0, 1, 2],
-    #         [0, 1, 0, 1, 0, 1, 0],
-    #         [0, 1, 0, 1, 0, 1, 0],
-    #         [0, 1, 0, 1, 0, 1, 0],
-    #         [0, 1, 0, 1, 0, 1, 0],
-    #         [0, 1, 0, 1, 0, 1, 0],
-    #         [0, 0, 0, 1, 0, 0, 0],
-    #     ]
+        env = [
+            [0, 1, 0, 0, 0, 1, 2],
+            [0, 1, 0, 1, 0, 1, 0],
+            [0, 1, 0, 1, 0, 1, 0],
+            [0, 1, 0, 1, 0, 1, 0],
+            [0, 1, 0, 1, 0, 1, 0],
+            [0, 1, 0, 1, 0, 1, 0],
+            [0, 0, 0, 1, 0, 0, 0],
+        ]
         
-    #     self.assertIsNotNone(findPath(env, 0, 40))
+        self.assertIsNotNone(findPath(env, 0, 40))

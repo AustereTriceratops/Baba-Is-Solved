@@ -14,6 +14,9 @@ def findSolution(level: list[list[int]], start_pos: int, num_steps: int):
     
     s = Solver()
     
+    n_z3 = Int('n')
+    s.add(n_z3 == n)
+    
     ### level
     envs = [Array(f'env_{i}', IntSort(), IntSort()) for i in range(num_steps + 1)]
 
@@ -75,7 +78,7 @@ def findSolution(level: list[list[int]], start_pos: int, num_steps: int):
         s.add(Select(envs[i], dst) == 0)
         # opposite tile must be traversible and reachable
         s.add(Select(envs[i], opp) == 0)
-        is_reachable, _ = reachable(n, envs[i], player_positions[i], opp, 20, meta_index=i+1)
+        is_reachable, _ = reachable(n_z3, envs[i], player_positions[i], opp, 15, meta_index=i+1)
         s.add(is_reachable)
         
         # # search should effectively stop and set all upcoming moves to 0 as soon as the goal positoon is reachable
@@ -113,7 +116,7 @@ def findSolution(level: list[list[int]], start_pos: int, num_steps: int):
         s.add(player_positions[i+1] == src)
     
     ### satisfiability: goal is reachable for player
-    is_reachable, _ = reachable(n, envs[num_steps], player_positions[num_steps], goal_pos, 20, meta_index=0)
+    is_reachable, _ = reachable(n_z3, envs[num_steps], player_positions[num_steps], goal_pos, 15, meta_index=0)
     s.add(is_reachable)
     
     result = s.check()
