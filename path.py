@@ -4,25 +4,30 @@ from z3 import Array, IntSort, Int, Select, Implies, And, Solver, sat, ArrayRef,
 # 0: empty
 # 1: obstacle
 # 2: goal
-def reachable(n: IntNumRef, env: ArrayRef, start_pos: IntNumRef | int, goal_pos: IntNumRef, num_steps : int = 20, meta_index: int = 0):
+def reachable(n: IntNumRef, env: ArrayRef, start_pos: IntNumRef | int, goal_pos: IntNumRef, max_steps : int = 20, meta_index: int = 0):
     constraints = []
+    
+    step_count = Int(f'step_count_{meta_index}')
+    constraints.append(step_count >= 0)
+    constraints.append(step_count <= max_steps)
     
     ### positions
     #player_positions = [Int(f'pos_{meta_index}_{i}') for i in range(num_steps + 1)]
-    x_positions = [Int(f'x_{meta_index}_{i}') for i in range(num_steps + 1)]
-    y_positions = [Int(f'y_{meta_index}_{i}') for i in range(num_steps + 1)]
+    x_positions = [Int(f'x_{meta_index}_{i}') for i in range(max_steps + 1)]
+    y_positions = [Int(f'y_{meta_index}_{i}') for i in range(max_steps + 1)]
     
     constraints.append(x_positions[0] == start_pos % n)
     constraints.append(y_positions[0] == start_pos / n)
     
-    for i in range(num_steps + 1):
+    for i in range(max_steps + 1):
         constraints.append(x_positions[i] >= 0)
         constraints.append(x_positions[i] < n)
         constraints.append(y_positions[i] >= 0)
         constraints.append(y_positions[i] < n)
-    
-    # player must be able to reach the goal position after num_steps steps
-    constraints.append(x_positions[num_steps] + n*y_positions[num_steps] == goal_pos)
+        
+        # player must be able to reach the goal position in at most max_steps steps
+        # solver will find step_count for us
+        constraints.append(Implies(i == step_count, x_positions[i] + n*y_positions[i] == goal_pos))
     
     ### movement
     # 0: stay
@@ -30,7 +35,7 @@ def reachable(n: IntNumRef, env: ArrayRef, start_pos: IntNumRef | int, goal_pos:
     # 2: right
     # 3: up
     # 4: down
-    moves = [Int(f'move_{meta_index}_{i}') for i in range(num_steps)]
+    moves = [Int(f'move_{meta_index}_{i}') for i in range(max_steps)]
     
     for i,move in enumerate(moves):
         constraints.append(move >= 0)
@@ -63,12 +68,13 @@ def reachable(n: IntNumRef, env: ArrayRef, start_pos: IntNumRef | int, goal_pos:
             y_positions[i+1] == prev_y - 1, x_positions[i+1] == prev_x, prev_y >= 1
         )))
         
+        # player cannot move through walls
         constraints.append(Select(env, x_positions[i+1] + n*y_positions[i+1]) != 1)
     
-    return And(constraints), (x_positions, y_positions)
+    return And(constraints), (x_positions, y_positions), step_count
 
 ### start_pos: index of the player's starting position 0 <= start_pos < n_sq
-def findPath(environment: list[list[int]], start_pos: int, num_steps: int):
+def findPath(environment: list[list[int]], start_pos: int, max_steps: int):
     n = len(environment)
     n_sq = n**2
     
@@ -91,7 +97,7 @@ def findPath(environment: list[list[int]], start_pos: int, num_steps: int):
     s.add(goal >= 0)
     s.add(goal < n_sq)
     
-    is_reachable, (x_positions, y_positions) = reachable(n_z3, env, start_pos, goal, num_steps)
+    is_reachable, (x_positions, y_positions), step_count = reachable(n_z3, env, start_pos, goal, max_steps)
     s.add(is_reachable)
     
     ### check satisfiability and return appropriate data
@@ -100,7 +106,8 @@ def findPath(environment: list[list[int]], start_pos: int, num_steps: int):
     if result == sat:
         m = s.model()
         
-        return [(m[x_positions[i]].as_long(), m[y_positions[i]].as_long()) for i in range(num_steps + 1)]
+        n_steps = m[step_count].as_long()
+        return [(m[x_positions[i]].as_long(), m[y_positions[i]].as_long()) for i in range(n_steps + 1)]
     else:
         return None
         

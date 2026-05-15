@@ -78,7 +78,7 @@ def findSolution(level: list[list[int]], start_pos: int, num_steps: int):
         s.add(Select(envs[i], dst) == 0)
         # opposite tile must be traversible and reachable
         s.add(Select(envs[i], opp) == 0)
-        is_reachable, _ = reachable(n_z3, envs[i], player_positions[i], opp, 15, meta_index=i+1)
+        is_reachable, _, _ = reachable(n_z3, envs[i], player_positions[i], opp, 20, meta_index=i+1)
         s.add(is_reachable)
         
         # # search should effectively stop and set all upcoming moves to 0 as soon as the goal positoon is reachable
@@ -87,25 +87,21 @@ def findSolution(level: list[list[int]], start_pos: int, num_steps: int):
         # s.add(Implies(is_reachable, moves[i] == 0))
         
         ### moves
-        s.add(Implies(moves[i] == 0, dst == src - 1))
-        s.add(Implies(moves[i] == 0, opp == src + 1))
-        s.add(Implies(moves[i] == 0, src % n > 0))
-        s.add(Implies(moves[i] == 0, src % n < n - 1))
+        s.add(Implies(moves[i] == 0, 
+            And(dst == src - 1, opp == src + 1, src % n > 0, src % n < n - 1)
+        ))
         
-        s.add(Implies(moves[i] == 1, dst == src + 1))
-        s.add(Implies(moves[i] == 1, opp == src - 1))
-        s.add(Implies(moves[i] == 1, src % n > 0))
-        s.add(Implies(moves[i] == 1, src % n < n - 1))
+        s.add(Implies(moves[i] == 1,
+            And(dst == src + 1, opp == src - 1, src % n > 0, src % n < n - 1)
+        ))
         
-        s.add(Implies(moves[i] == 2, dst == src + n))
-        s.add(Implies(moves[i] == 2, opp == src - n))
-        s.add(Implies(moves[i] == 2, src > n - 1))
-        s.add(Implies(moves[i] == 2, src < n_sq - n))
+        s.add(Implies(moves[i] == 2,
+            And(dst == src + n, opp == src - n, src > n - 1, src < n_sq - n) 
+        ))
         
-        s.add(Implies(moves[i] == 3, dst == src - n))
-        s.add(Implies(moves[i] == 3, opp == src + n))
-        s.add(Implies(moves[i] == 3, src > n - 1))
-        s.add(Implies(moves[i] == 3, src < n_sq - n))
+        s.add(Implies(moves[i] == 3, 
+            And(dst == src - n, opp == src + n, src > n - 1, src < n_sq - n)
+        ))
     
         # level state update
         for j in range(n_sq):
@@ -116,7 +112,7 @@ def findSolution(level: list[list[int]], start_pos: int, num_steps: int):
         s.add(player_positions[i+1] == src)
     
     ### satisfiability: goal is reachable for player
-    is_reachable, _ = reachable(n_z3, envs[num_steps], player_positions[num_steps], goal_pos, 15, meta_index=0)
+    is_reachable, _, _ = reachable(n_z3, envs[num_steps], player_positions[num_steps], goal_pos, 20, meta_index=0)
     s.add(is_reachable)
     
     result = s.check()
