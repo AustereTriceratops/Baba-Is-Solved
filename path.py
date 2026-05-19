@@ -2,8 +2,8 @@ from z3 import Array, IntSort, Int, Select, Implies, And, Solver, sat, ArrayRef,
 
 ### env encoding
 # 0: empty
-# 1: obstacle
-# 2: goal
+# 1: goal
+# 2: obstacle
 def reachable(n: IntNumRef, env: ArrayRef, start_pos: IntNumRef | int, goal_pos: IntNumRef, max_steps : int = 20, meta_index: int = 0):
     constraints = []
     
@@ -69,7 +69,7 @@ def reachable(n: IntNumRef, env: ArrayRef, start_pos: IntNumRef | int, goal_pos:
         )))
         
         # player cannot move through walls
-        constraints.append(Select(env, x_positions[i+1] + n*y_positions[i+1]) != 1)
+        constraints.append(Select(env, x_positions[i+1] + n*y_positions[i+1]) < 2)
     
     return And(constraints), (x_positions, y_positions), step_count
 
@@ -93,7 +93,7 @@ def findPath(environment: list[list[int]], start_pos: int, max_steps: int):
     
     # initialize goal tile
     goal = Int(f'goal_pos_{0}')
-    s.add(Select(env, goal) == 2)
+    s.add(Select(env, goal) == 1)
     s.add(goal >= 0)
     s.add(goal < n_sq)
     

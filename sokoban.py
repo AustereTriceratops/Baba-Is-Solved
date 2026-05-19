@@ -4,8 +4,8 @@ from path import reachable
 
 ### env
 # 0: empty
-# 1: wall
-# 2: goal
+# 1: goal
+# 2: wall
 # 3: pushable
 
 def findSolution(level: list[list[int]], start_pos: int, num_steps: int):
@@ -45,7 +45,7 @@ def findSolution(level: list[list[int]], start_pos: int, num_steps: int):
     
     # init player's starting position and mark goal position
     s.add(player_positions[0] == start_pos)
-    s.add(Select(envs[0], goal_pos) == 2)
+    s.add(Select(envs[0], goal_pos) == 1)
     
     ### moves
     # 0: left
