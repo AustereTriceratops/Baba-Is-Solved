@@ -50,12 +50,15 @@ class TestPath(unittest.TestCase):
         ]
         self.assertIsNotNone(findSolution(env, 0, 1))
         
+        # this puzzle can be solved in 2 moves but not 1
         env = [
             [0, 3, 0],
             [3, 3, 2],
             [0, 0, 0],
         ]
         self.assertIsNotNone(findSolution(env, 0, 2))
+        self.assertIsNone(findSolution(env, 0, 1))
+        # TODO: FIX!!!
         
         # env = [
         #     [0, 3, 0, 0],
