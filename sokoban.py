@@ -1,12 +1,18 @@
-from z3 import Array, IntSort, Int, Select, Implies, And, Solver, sat
+from z3 import Array, IntSort, Int, Select, Implies, And, Or, If, Solver, sat, IntNumRef, BoolRef
 
 from path import reachable
+from utils import A_before_B
+
 
 ### env
+# TODO: environment features should be given named constants at this point
 # 0: empty
 # 1: goal
 # 2: wall
-# 3: pushable
+# >= 3: pushable
+# 3: box
+# 4: wall text
+# 5: is stop text
 # k: number of steps to try
 def findSolution(level: list[list[int]], start_pos: int, k: int):
     n = len(level)
@@ -24,13 +30,25 @@ def findSolution(level: list[list[int]], start_pos: int, k: int):
     for env in envs:
         for i in range(n_sq):
             s.add(Select(env, i) >= 0)
-            s.add(Select(env, i) < 4)
+            s.add(Select(env, i) < 6)
             
     # init the starting level state
+    wall_text_x = [Int(f'wall_text_x_{i}') for i in range(k + 1)]
+    wall_text_y = [Int(f'wall_text_y_{i}') for i in range(k + 1)]
+    ispush_text_x = [Int(f'ispush_text_x_{i}') for i in range(k + 1)]
+    ispush_text_y = [Int(f'ispush_text_y_{i}') for i in range(k + 1)]
+    
     for i in range(n):
         for j in range(n):
             s.add(Select(envs[0], n*i + j) == level[i][j])
             
+            if level[i][j] == 4:
+                s.add(wall_text_x[0] == j)
+                s.add(wall_text_y[0] == i)
+            elif level[i][j] == 5:
+                s.add(ispush_text_x[0] == j)
+                s.add(ispush_text_y[0] == i)
+    
     ### player positions
     x_positions = [Int(f'player_pos_x_{i}') for i in range(k + 1)]
     y_positions = [Int(f'player_pos_y_{i}') for i in range(k + 1)]
@@ -84,13 +102,21 @@ def findSolution(level: list[list[int]], start_pos: int, k: int):
         opp_y = Int(f'opp_y_{i}') # y of the tile opposite from dst
         opp = opp_x + n*opp_y # tile opposite from dst
         
+        src_tile = Select(envs[i], src)
+        dst_tile = Select(envs[i], dst)
+        opp_tile = Select(envs[i], opp)
+        
         # only a box/pushable object gets moved
-        s.add(Select(envs[i], src) == 3)
+        s.add(src_tile >= 3)
         # pushables can only be moved to empty tiles
-        s.add(Select(envs[i], dst) == 0)
+        s.add(dst_tile == 0)
         # opposite tile must be traversible and reachable
-        s.add(Select(envs[i], opp) == 0)
-        is_reachable, _, _ = reachable(n_z3, envs[i], x_positions[i], y_positions[i], opp, 20, meta_index=i+1)
+        s.add(If(
+            A_before_B(wall_text_x[i], wall_text_y[i], ispush_text_x[i], ispush_text_y[i], n),
+            opp_tile == 0,
+            Or(opp_tile == 0, opp_tile == 2)
+        )) # TODO: maybe this should be an implies statement instead and ignore the last case?
+        is_reachable, _, _ = reachable(n_z3, envs[i], x_positions[i], y_positions[i], opp, 20, meta_index=i)
         s.add(is_reachable)
         
         # # search should effectively stop and set all upcoming moves to 0 as soon as the goal positoon is reachable
@@ -138,14 +164,14 @@ def findSolution(level: list[list[int]], start_pos: int, k: int):
         for j in range(n_sq):
             s.add(Implies(And(j != src, j != dst), Select(envs[i+1], j) == Select(envs[i], j)))
         
-        s.add(Select(envs[i+1], dst) == 3)
+        s.add(Select(envs[i+1], dst) == src_tile)
         s.add(Select(envs[i+1], src) == 0)
         s.add(x_positions[i+1] == src_x)
         s.add(y_positions[i+1] == src_y)
     
     ### satisfiability: goal is reachable for player
     is_reachable, _, _ = reachable(
-        n_z3, envs[k], x_positions[k], y_positions[k], goal_pos, 20, meta_index=0
+        n_z3, envs[k], x_positions[k], y_positions[k], goal_pos, 20, meta_index=k+1
     )
     
     s.add(is_reachable)
@@ -157,4 +183,3 @@ def findSolution(level: list[list[int]], start_pos: int, k: int):
         return m
     else:
         return None        
-        

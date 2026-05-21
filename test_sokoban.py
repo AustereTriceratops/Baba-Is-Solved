@@ -2,6 +2,14 @@ import unittest
 
 from sokoban import findSolution
 
+### env
+# 0: empty
+# 1: goal
+# 2: wall
+# >= 3: pushable
+# 3: box
+# 4: wall text
+# 5: is stop text
 class TestPath(unittest.TestCase):
     def test_already_solved(self):
         env = [
@@ -66,3 +74,22 @@ class TestPath(unittest.TestCase):
             [0, 2, 1, 2],
         ]
         self.assertIsNotNone(findSolution(env, 0, 3))
+    
+    def test_wall_not_push(self):
+        env = [
+            [0, 0, 0, 0],
+            [0, 0, 2, 3],
+            [4, 5, 3, 1],
+            [0, 0, 0, 0],
+        ]
+        
+        self.assertIsNotNone(findSolution(env, 0, 2))
+        
+        env = [
+            [0, 0, 2, 0],
+            [0, 0, 2, 0],
+            [4, 5, 2, 0],
+            [0, 0, 2, 1],
+        ]
+        
+        self.assertIsNotNone(findSolution(env, 0, 1))

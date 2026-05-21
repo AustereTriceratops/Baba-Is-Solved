@@ -3,7 +3,8 @@ from z3 import Array, IntSort, Int, Select, Implies, And, Solver, sat, ArrayRef,
 ### env encoding
 # 0: empty
 # 1: goal
-# >= 2: obstacle
+# 2: wall
+# >= 3: pushable/obstacle
 def reachable(
     n: IntNumRef,
     env: ArrayRef,
