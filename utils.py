@@ -28,3 +28,20 @@ class ImageGen:
                 level.paste(img, box=(24*x, 24*y))
         
         return level
+
+    # model: z3 model from solver.model()
+    # n: length of level grid
+    # k: num of steps
+    def generate_sequence(self, model, n, k):
+        imgs = []
+
+        for i in range(k + 1):
+            env_z3 = None
+
+            for decl in model.decls():
+                if decl.name() == f'env_{i}':
+                    env_z3 = model[decl]
+
+            imgs.append(self.generate(model, env_z3, n))
+        
+        return imgs
