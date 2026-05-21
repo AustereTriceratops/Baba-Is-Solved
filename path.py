@@ -1,4 +1,4 @@
-from z3 import Array, IntSort, Int, Select, Implies, And, Solver, sat, ArrayRef, IntNumRef
+from z3 import Array, IntSort, Int, Select, Implies, And, If, Solver, sat, ArrayRef, IntNumRef, BoolRef
 
 ### env encoding
 # 0: empty
@@ -11,6 +11,7 @@ def reachable(
     x_pos: IntNumRef | int,
     y_pos: IntNumRef | int,
     goal_pos: IntNumRef,
+    wall_is_stop: BoolRef,
     max_steps : int = 20,
     meta_index: int = 0
 ):
@@ -77,13 +78,16 @@ def reachable(
             y_positions[i+1] == prev_y - 1, x_positions[i+1] == prev_x, prev_y >= 1
         )))
         
-        # player cannot move through walls
-        constraints.append(Select(env, x_positions[i+1] + n*y_positions[i+1]) < 2)
+        # player cannot move through walls iff wall_is_stop is true
+        constraints.append(If(wall_is_stop,
+            Select(env, x_positions[i+1] + n*y_positions[i+1]) < 2,
+            Select(env, x_positions[i+1] + n*y_positions[i+1]) < 3
+        ))
     
     return And(constraints), (x_positions, y_positions), step_count
 
 ### start_pos: index of the player's starting position 0 <= start_pos < n_sq
-def findPath(environment: list[list[int]], start_pos: int, max_steps: int):
+def findPath(environment: list[list[int]], start_pos: int, max_steps: int, wall_is_stop=True):
     n = len(environment)
     n_sq = n**2
     start_x = start_pos % n
@@ -108,7 +112,7 @@ def findPath(environment: list[list[int]], start_pos: int, max_steps: int):
     s.add(goal >= 0)
     s.add(goal < n_sq)
     
-    is_reachable, (x_positions, y_positions), step_count = reachable(n_z3, env, start_x, start_y, goal, max_steps)
+    is_reachable, (x_positions, y_positions), step_count = reachable(n_z3, env, start_x, start_y, goal, wall_is_stop, max_steps)
     s.add(is_reachable)
     
     ### check satisfiability and return appropriate data

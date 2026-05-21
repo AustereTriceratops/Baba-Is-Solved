@@ -135,3 +135,13 @@ class TestPath(unittest.TestCase):
         ]
         
         self.assertIsNotNone(findPath(env, 0, 80))
+    
+    def test_wall_not_stop_pathing(self):
+        env = [
+            [0, 2, 0, 0],
+            [0, 2, 0, 0],
+            [0, 2, 0, 1],
+            [0, 2, 0, 0],
+        ]
+        
+        self.assertIsNotNone(findPath(env, 0, 5, wall_is_stop=False))

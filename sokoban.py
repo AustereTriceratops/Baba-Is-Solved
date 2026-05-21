@@ -1,4 +1,4 @@
-from z3 import Array, IntSort, Int, Select, Implies, And, Or, If, Solver, sat, IntNumRef, BoolRef
+from z3 import Array, IntSort, Int, Bool, Select, Implies, And, Or, If, Solver, sat, IntNumRef, BoolRef
 
 from path import reachable
 from utils import A_before_B
@@ -32,12 +32,14 @@ def findSolution(level: list[list[int]], start_pos: int, k: int):
             s.add(Select(env, i) >= 0)
             s.add(Select(env, i) < 6)
             
-    # init the starting level state
+    # track the text blocks
     wall_text_x = [Int(f'wall_text_x_{i}') for i in range(k + 1)]
     wall_text_y = [Int(f'wall_text_y_{i}') for i in range(k + 1)]
     ispush_text_x = [Int(f'ispush_text_x_{i}') for i in range(k + 1)]
     ispush_text_y = [Int(f'ispush_text_y_{i}') for i in range(k + 1)]
+    wall_is_stop = [A_before_B(wall_text_x[i], wall_text_y[i], ispush_text_x[i], ispush_text_y[i], n) for i in range(k + 1)]
     
+    # init the starting level state
     for i in range(n):
         for j in range(n):
             s.add(Select(envs[0], n*i + j) == level[i][j])
@@ -73,7 +75,7 @@ def findSolution(level: list[list[int]], start_pos: int, k: int):
     moves = [Int(f'move_{i}') for i in range(k)]
     src_x_arr = [Int(f'src_x_{i}') for i in range(k)]
     src_y_arr = [Int(f'src_y_{i}') for i in range(k)]
-    dst_x_arr = [Int(f'dst_x_{i}') for i in range(k)]
+    dst_x_arr = [Int(f'dst_x_{i}') for i in range(k)] # TODO: can maybe refactor these out
     dst_y_arr = [Int(f'dst_y_{i}') for i in range(k)]
     
     # limits on these values and indices
@@ -108,21 +110,19 @@ def findSolution(level: list[list[int]], start_pos: int, k: int):
         
         # only a box/pushable object gets moved
         s.add(src_tile >= 3)
+        
         # pushables can only be moved to empty tiles
         s.add(dst_tile == 0)
+        
         # opposite tile must be traversible and reachable
         s.add(If(
-            A_before_B(wall_text_x[i], wall_text_y[i], ispush_text_x[i], ispush_text_y[i], n),
+            wall_is_stop[i],
             opp_tile == 0,
             Or(opp_tile == 0, opp_tile == 2)
         )) # TODO: maybe this should be an implies statement instead and ignore the last case?
-        is_reachable, _, _ = reachable(n_z3, envs[i], x_positions[i], y_positions[i], opp, 20, meta_index=i)
-        s.add(is_reachable)
         
-        # # search should effectively stop and set all upcoming moves to 0 as soon as the goal positoon is reachable
-        # # TODO: implement early stopping in some way like in path.py?
-        # is_reachable, _ = reachable(n, envs[i], player_positions[i], opp, 20, meta_index=k+i+1)
-        # s.add(Implies(is_reachable, moves[i] == 0))
+        is_reachable, _, _ = reachable(n_z3, envs[i], x_positions[i], y_positions[i], opp, wall_is_stop[i], max_steps=20, meta_index=i)
+        s.add(is_reachable)
         
         ### moves
         # 0: left
@@ -170,8 +170,9 @@ def findSolution(level: list[list[int]], start_pos: int, k: int):
         s.add(y_positions[i+1] == src_y)
     
     ### satisfiability: goal is reachable for player
+    # TODO: max_steps should be able to be set by the user
     is_reachable, _, _ = reachable(
-        n_z3, envs[k], x_positions[k], y_positions[k], goal_pos, 20, meta_index=k+1
+        n_z3, envs[k], x_positions[k], y_positions[k], goal_pos, wall_is_stop[k], max_steps=20, meta_index=k+1
     )
     
     s.add(is_reachable)
