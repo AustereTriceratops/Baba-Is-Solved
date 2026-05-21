@@ -3,8 +3,16 @@ from z3 import Array, IntSort, Int, Select, Implies, And, Solver, sat, ArrayRef,
 ### env encoding
 # 0: empty
 # 1: goal
-# 2: obstacle
-def reachable(n: IntNumRef, env: ArrayRef, start_pos: IntNumRef | int, goal_pos: IntNumRef, max_steps : int = 20, meta_index: int = 0):
+# >= 2: obstacle
+def reachable(
+    n: IntNumRef,
+    env: ArrayRef,
+    x_pos: IntNumRef | int,
+    y_pos: IntNumRef | int,
+    goal_pos: IntNumRef,
+    max_steps : int = 20,
+    meta_index: int = 0
+):
     constraints = []
     
     step_count = Int(f'step_count_{meta_index}')
@@ -16,8 +24,8 @@ def reachable(n: IntNumRef, env: ArrayRef, start_pos: IntNumRef | int, goal_pos:
     x_positions = [Int(f'x_{meta_index}_{i}') for i in range(max_steps + 1)]
     y_positions = [Int(f'y_{meta_index}_{i}') for i in range(max_steps + 1)]
     
-    constraints.append(x_positions[0] == start_pos % n)
-    constraints.append(y_positions[0] == start_pos / n)
+    constraints.append(x_positions[0] == x_pos)
+    constraints.append(y_positions[0] == y_pos)
     
     for i in range(max_steps + 1):
         constraints.append(x_positions[i] >= 0)
@@ -77,6 +85,8 @@ def reachable(n: IntNumRef, env: ArrayRef, start_pos: IntNumRef | int, goal_pos:
 def findPath(environment: list[list[int]], start_pos: int, max_steps: int):
     n = len(environment)
     n_sq = n**2
+    start_x = start_pos % n
+    start_y = start_pos // n
     
     s = Solver()
     
@@ -97,7 +107,7 @@ def findPath(environment: list[list[int]], start_pos: int, max_steps: int):
     s.add(goal >= 0)
     s.add(goal < n_sq)
     
-    is_reachable, (x_positions, y_positions), step_count = reachable(n_z3, env, start_pos, goal, max_steps)
+    is_reachable, (x_positions, y_positions), step_count = reachable(n_z3, env, start_x, start_y, goal, max_steps)
     s.add(is_reachable)
     
     ### check satisfiability and return appropriate data
