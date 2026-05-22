@@ -73,9 +73,10 @@ class TestPath(unittest.TestCase):
             [0, 0, 3, 0],
             [0, 2, 1, 2],
         ]
+        self.assertIsNone(findSolution(env, 0, 2))
         self.assertIsNotNone(findSolution(env, 0, 3))
     
-    def test_wall_not_push(self):
+    def test_wall_not_stop(self):
         env = [
             [0, 0, 0, 0],
             [0, 0, 2, 3],

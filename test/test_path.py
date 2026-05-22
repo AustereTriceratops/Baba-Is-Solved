@@ -76,6 +76,28 @@ class TestPath(unittest.TestCase):
             [0, 0, 0],
         ]
         self.assertIsNone(findPath(env, 0, 4))
+        
+        env = [
+            [0, 3, 0],
+            [3, 1, 0],
+            [0, 0, 0],
+        ]
+        self.assertIsNone(findPath(env, 0, 4))
+        
+        env = [
+            [0, 3, 0],
+            [3, 1, 0],
+            [0, 0, 0],
+        ]
+        self.assertIsNone(findPath(env, 0, 4))
+        
+        env = [
+            [0, 3, 0, 0],
+            [3, 0, 0, 0],
+            [0, 3, 3, 0],
+            [0, 2, 1, 2],
+        ]
+        self.assertIsNone(findPath(env, 2, 10))
     
     
     def test_pathing_around_obstacles(self):

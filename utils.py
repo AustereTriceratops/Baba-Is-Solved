@@ -22,12 +22,14 @@ def A_below_B(x_1: s_int, y_1: s_int, x_2: s_int, y_2: s_int, n: s_int) -> BoolR
 
 class ImageGen:
     baba_sprite = Image.open(os.path.join('assets', 'baba.png'))
-    box_sprite = Image.open(os.path.join('assets', 'box.png'))
-    wall_sprite = Image.open(os.path.join('assets', 'wall.png'))
     goal_sprite = Image.open(os.path.join('assets', 'goal.png'))
+    wall_sprite = Image.open(os.path.join('assets', 'wall.png'))
+    box_sprite = Image.open(os.path.join('assets', 'box.png'))
+    wall_text_sprite = Image.open(os.path.join('assets', 'wall_text.png'))
+    stop_text_sprite = Image.open(os.path.join('assets', 'stop_text.png'))
     
-    def generate(self, model, z3_array, n):
-        level = Image.new('RGB', size=(24*n, 24*n), color='#54a54b')
+    def generate(self, model, z3_array, player_pos, n):
+        level = Image.new('RGBA', size=(24*n, 24*n), color='#54a54b')
 
         for i in range(n**2):
             x = i % n
@@ -43,8 +45,15 @@ class ImageGen:
                     img = self.wall_sprite
                 elif e == 3:
                     img = self.box_sprite
+                elif e == 4:
+                    img = self.wall_text_sprite
+                elif e == 5:
+                    img = self.stop_text_sprite
                 
-                level.paste(img, box=(24*x, 24*y))
+                level.paste(img, box=(24*x, 24*y), mask=img)
+        
+        x, y = player_pos
+        level.paste(self.baba_sprite, box=(24*x, 24*y), mask=self.baba_sprite)
         
         return level
 
@@ -56,11 +65,18 @@ class ImageGen:
 
         for i in range(k + 1):
             env_z3 = None
+            pos_x = None
+            pos_y = None
 
             for decl in model.decls():
-                if decl.name() == f'env_{i}':
+                name = decl.name()
+                if name == f'env_{i}':
                     env_z3 = model[decl]
+                elif name == f'player_pos_x_{i}':
+                    pos_x = model[decl].as_long()
+                elif name == f'player_pos_y_{i}':
+                    pos_y = model[decl].as_long()
 
-            imgs.append(self.generate(model, env_z3, n))
+            imgs.append(self.generate(model, env_z3, (pos_x, pos_y), n))
         
         return imgs
