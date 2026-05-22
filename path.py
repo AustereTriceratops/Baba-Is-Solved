@@ -1,5 +1,7 @@
 from z3 import Array, IntSort, Int, Select, Implies, And, If, Solver, sat, ArrayRef, IntNumRef, BoolRef
 
+from constants import *
+
 ### env encoding
 # 0: empty
 # 1: goal
@@ -80,8 +82,8 @@ def reachable(
         
         # player cannot move through walls iff wall_is_stop is true
         constraints.append(If(wall_is_stop,
-            Select(env, x_positions[i+1] + n*y_positions[i+1]) < 2,
-            Select(env, x_positions[i+1] + n*y_positions[i+1]) < 3
+            Select(env, x_positions[i+1] + n*y_positions[i+1]) < WALL,
+            Select(env, x_positions[i+1] + n*y_positions[i+1]) < BOX
         ))
     
     return And(constraints), (x_positions, y_positions), step_count
@@ -108,7 +110,7 @@ def findPath(environment: list[list[int]], start_pos: int, max_steps: int, wall_
     
     # initialize goal tile
     goal = Int(f'goal_pos_{0}')
-    s.add(Select(env, goal) == 1)
+    s.add(Select(env, goal) == GOAL)
     s.add(goal >= 0)
     s.add(goal < n_sq)
     

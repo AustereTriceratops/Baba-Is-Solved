@@ -1,6 +1,7 @@
 import unittest
 
 from sokoban import findSolution
+from constants import *
 
 ### env
 # 0: empty
@@ -87,10 +88,10 @@ class TestPath(unittest.TestCase):
         self.assertIsNotNone(findSolution(env, 0, 2))
         
         env = [
-            [0, 0, 2, 0],
-            [0, 0, 2, 0],
-            [4, 5, 2, 0],
-            [0, 0, 2, 1],
+            [EMPTY   , EMPTY   , WALL, EMPTY],
+            [EMPTY   , EMPTY   , WALL, EMPTY],
+            [WALL_TXT, STOP_TXT, WALL, EMPTY],
+            [EMPTY   , EMPTY   , WALL, GOAL],
         ]
         
         self.assertIsNotNone(findSolution(env, 0, 1))

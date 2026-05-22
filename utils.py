@@ -2,6 +2,7 @@ from PIL import Image
 import os
 
 from z3 import Or, And, IntNumRef, BoolRef
+from constants import *
 
 s_int = IntNumRef | int
 
@@ -38,16 +39,16 @@ class ImageGen:
             e = model.evaluate(z3_array[i]).as_long()
             img = None
             
-            if e != 0:
-                if e == 1:
+            if e != EMPTY:
+                if e == GOAL:
                     img = self.goal_sprite
-                elif e == 2:
+                elif e == WALL:
                     img = self.wall_sprite
-                elif e == 3:
+                elif e == BOX:
                     img = self.box_sprite
-                elif e == 4:
+                elif e == WALL_TXT:
                     img = self.wall_text_sprite
-                elif e == 5:
+                elif e == STOP_TXT:
                     img = self.stop_text_sprite
                 
                 level.paste(img, box=(24*x, 24*y), mask=img)
