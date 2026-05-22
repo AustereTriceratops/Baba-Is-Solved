@@ -35,9 +35,11 @@ def findSolution(level: list[list[int]], start_pos: int, k: int):
     # track the text blocks
     wall_text_x = [Int(f'wall_text_x_{i}') for i in range(k + 1)]
     wall_text_y = [Int(f'wall_text_y_{i}') for i in range(k + 1)]
-    ispush_text_x = [Int(f'ispush_text_x_{i}') for i in range(k + 1)]
-    ispush_text_y = [Int(f'ispush_text_y_{i}') for i in range(k + 1)]
-    wall_is_stop = [A_before_B(wall_text_x[i], wall_text_y[i], ispush_text_x[i], ispush_text_y[i], n) for i in range(k + 1)]
+    wall_text_present = False
+    isstop_text_x = [Int(f'isstop_text_x_{i}') for i in range(k + 1)]
+    isstop_text_y = [Int(f'isstop_text_y_{i}') for i in range(k + 1)]
+    isstop_text_present = False
+    wall_is_stop = [A_before_B(wall_text_x[i], wall_text_y[i], isstop_text_x[i], isstop_text_y[i], n) for i in range(k + 1)]
     
     # init the starting level state
     for i in range(n):
@@ -45,11 +47,21 @@ def findSolution(level: list[list[int]], start_pos: int, k: int):
             s.add(Select(envs[0], n*i + j) == level[i][j])
             
             if level[i][j] == 4:
+                wall_text_present = True
                 s.add(wall_text_x[0] == j)
                 s.add(wall_text_y[0] == i)
             elif level[i][j] == 5:
-                s.add(ispush_text_x[0] == j)
-                s.add(ispush_text_y[0] == i)
+                isstop_text_present = True
+                s.add(isstop_text_x[0] == j)
+                s.add(isstop_text_y[0] == i)
+    
+    if not wall_text_present:
+        [s.add(wall_text_x[i] == -2) for i in range(k+1)]
+        [s.add(wall_text_y[i] == -1) for i in range(k+1)]
+        
+    if not isstop_text_present:
+        [s.add(isstop_text_x[i] == -1) for i in range(k+1)]
+        [s.add(isstop_text_y[i] == -1) for i in range(k+1)]
     
     ### player positions
     x_positions = [Int(f'player_pos_x_{i}') for i in range(k + 1)]
