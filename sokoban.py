@@ -8,7 +8,8 @@ from constants import *
 
 
 # k: number of steps to try
-def findSolution(level: list[list[int]], start_pos: int, k: int):
+# r: max search length for pathfinding subproblem
+def findSolution(level: list[list[int]], start_pos: int, k: int, r = 20):
     n = len(level)
     n_sq = n*n
     
@@ -47,12 +48,11 @@ def findSolution(level: list[list[int]], start_pos: int, k: int):
         s.add(And(src_y_arr[i] >= 0, src_y_arr[i] < n))
     
     for i in range(k):
-        add_step_constraints(s, i, n_z3, n_sq, envs, moves, x_positions, y_positions, src_x_arr, src_y_arr, wall_is_stop)
+        add_step_constraints(s, i, n_z3, n_sq, r, envs, moves, x_positions, y_positions, src_x_arr, src_y_arr, wall_is_stop)
     
     ### satisfiability: goal is reachable for player
-    # TODO: max_steps should be able to be set by the user
     is_reachable, _, _ = reachable(
-        n_z3, envs[k], x_positions[k], y_positions[k], goal_pos, wall_is_stop[k], max_steps=20, meta_index=k+1
+        n_z3, envs[k], x_positions[k], y_positions[k], goal_pos, wall_is_stop[k], max_steps=r, meta_index=k+1
     )
     
     s.add(is_reachable)
@@ -135,6 +135,7 @@ def add_step_constraints(s: Solver,
     i: int,
     n_z3: IntNumRef,
     n_sq: int,
+    r: int,
     envs: List[ArrayRef],
     moves: List[IntNumRef],
     x_positions: List[IntNumRef],
@@ -172,7 +173,7 @@ def add_step_constraints(s: Solver,
         Or(opp_tile == EMPTY, opp_tile == WALL)
     ))
     
-    is_reachable, _, _ = reachable(n_z3, envs[i], x_positions[i], y_positions[i], opp, wall_is_stop[i], max_steps=20, meta_index=i)
+    is_reachable, _, _ = reachable(n_z3, envs[i], x_positions[i], y_positions[i], opp, wall_is_stop[i], max_steps=r, meta_index=i)
     s.add(is_reachable)
     
     ### moves

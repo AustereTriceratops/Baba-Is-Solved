@@ -57,7 +57,7 @@ class TestPath(unittest.TestCase):
             [3, 0, 1],
             [0, 0, 0],
         ]
-        self.assertIsNotNone(findSolution(env, 0, 1))
+        self.assertIsNotNone(findSolution(env, 0, 1, r=5))
         
         # this puzzle can be solved in 2 moves but not 1
         env = [
@@ -65,8 +65,8 @@ class TestPath(unittest.TestCase):
             [3, 3, 1],
             [0, 0, 0],
         ]
-        self.assertIsNotNone(findSolution(env, 0, 2))
-        self.assertIsNone(findSolution(env, 0, 1))
+        self.assertIsNone(findSolution(env, 0, 1, r=5))
+        self.assertIsNotNone(findSolution(env, 0, 2, r=5))
         
         env = [
             [0, 3, 0, 0],
@@ -74,8 +74,8 @@ class TestPath(unittest.TestCase):
             [0, 0, 3, 0],
             [0, 2, 1, 2],
         ]
-        self.assertIsNone(findSolution(env, 0, 2))
-        self.assertIsNotNone(findSolution(env, 0, 3))
+        self.assertIsNone(findSolution(env, 0, 2, r=5))
+        self.assertIsNotNone(findSolution(env, 0, 3, r=5))
     
     def test_wall_not_stop(self):
         env = [
@@ -85,7 +85,7 @@ class TestPath(unittest.TestCase):
             [0, 0, 0, 0],
         ]
         
-        self.assertIsNotNone(findSolution(env, 0, 2))
+        self.assertIsNotNone(findSolution(env, 0, 2, r=5))
         
         env = [
             [EMPTY   , EMPTY   , WALL, EMPTY],
@@ -94,4 +94,4 @@ class TestPath(unittest.TestCase):
             [EMPTY   , EMPTY   , WALL, GOAL],
         ]
         
-        self.assertIsNotNone(findSolution(env, 0, 1))
+        self.assertIsNotNone(findSolution(env, 0, 1, r=5))
