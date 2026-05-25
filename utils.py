@@ -1,10 +1,13 @@
 from PIL import Image
 import os
 
-from z3 import Or, And, IntNumRef, BoolRef
+from z3 import Not, Or, And, IntNumRef, BoolRef
 from constants import *
 
 s_int = IntNumRef | int
+
+def Xnor(a, b):
+    return Or(And(a, b), And(Not(a), Not(b)))
 
 def are_adjacent(x_1: s_int, y_1: s_int, x_2: s_int, y_2: s_int, n: s_int) -> BoolRef:
     return Or(

@@ -181,36 +181,40 @@ def add_step_constraints(s: Solver,
     # 1: right
     # 2: up
     # 3: down
-    s.add(Implies(moves[i] == 0,
+    s.add(If(moves[i] == 0,
         And(
             dst_x == src_x - 1, dst_y == src_y,
             src_x > 0, src_x < n_z3 - 1,
             opp_x == src_x + 1, opp_y == src_y
-        )
+        ),
+        True
     ))
     
-    s.add(Implies(moves[i] == 1,
+    s.add(If(moves[i] == 1,
         And(
             dst_x == src_x + 1, dst_y == src_y, 
             src_x > 0, src_x < n_z3 - 1, 
             opp_x == src_x - 1, opp_y == src_y
-        )   
+        ),
+        True  
     ))
     
-    s.add(Implies(moves[i] == 2,
+    s.add(If(moves[i] == 2,
         And(
             dst_y == src_y + 1, dst_x == src_x,
             src_y > 0, src_y < n_z3 - 1,
             opp_y == src_y - 1, opp_x == src_x,
-        )
+        ),
+        True
     ))
     
-    s.add(Implies(moves[i] == 3,
+    s.add(If(moves[i] == 3,
         And(
             dst_y == src_y - 1, dst_x == src_x,
             src_y > 0, src_y < n_z3 - 1,
             opp_y == src_y + 1, opp_x == src_x,
-        )
+        ),
+        True
     ))
 
     for j in range(n_sq):

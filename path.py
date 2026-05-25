@@ -1,6 +1,7 @@
-from z3 import Array, IntSort, Int, Select, Implies, And, If, Solver, sat, ArrayRef, IntNumRef, BoolRef
+from z3 import Array, IntSort, Int, Select, Not, Implies, Xor, And, If, Solver, sat, ArrayRef, IntNumRef, BoolRef
 
 from constants import *
+from utils import Xnor
 
 ### env encoding
 # 0: empty
@@ -13,7 +14,7 @@ def reachable(
     x_pos: IntNumRef | int,
     y_pos: IntNumRef | int,
     goal_pos: IntNumRef,
-    wall_is_stop: BoolRef,
+    wall_is_stop: BoolRef | bool,
     max_steps : int = 20,
     meta_index: int = 0
 ):
@@ -38,7 +39,7 @@ def reachable(
         
         # player must be able to reach the goal position in at most max_steps steps
         # solver will find step_count for us
-        constraints.append(Implies(i == step_count, x_positions[i] + n*y_positions[i] == goal_pos))
+        constraints.append(If(i == step_count, x_positions[i] + n*y_positions[i] == goal_pos, True))
     
     ### movement
     # 0: stay
@@ -56,28 +57,28 @@ def reachable(
         prev_y = y_positions[i]
         
         # if the player is at the goal position, don't bother moving
-        constraints.append(Implies(prev_x + n*prev_y == goal_pos, move == 0))
+        constraints.append(If(prev_x + n*prev_y == goal_pos, move == 0, move != 0))
         
         # movement conditions
-        constraints.append(Implies(move == 0, And(
+        constraints.append(If(move == 0, And(
             x_positions[i+1] == prev_x, y_positions[i+1] == prev_y
-        )))
+        ), True))
         
-        constraints.append(Implies(move == 1, And(
+        constraints.append(If(move == 1, And(
             x_positions[i+1] == prev_x - 1, y_positions[i+1] == prev_y, prev_x >= 1
-        )))
+        ), True))
         
-        constraints.append(Implies(move == 2, And(
+        constraints.append(If(move == 2, And(
             x_positions[i+1] == prev_x + 1, y_positions[i+1] == prev_y, prev_x < n - 1
-        )))
+        ), True))
         
-        constraints.append(Implies(move == 3, And(
+        constraints.append(If(move == 3, And(
             y_positions[i+1] == prev_y + 1, x_positions[i+1] == prev_x, prev_y < n - 1
-        )))
+        ), True))
         
-        constraints.append(Implies(move == 4, And(
+        constraints.append(If(move == 4, And(
             y_positions[i+1] == prev_y - 1, x_positions[i+1] == prev_x, prev_y >= 1
-        )))
+        ), True))
         
         # player cannot move through walls iff wall_is_stop is true
         constraints.append(If(wall_is_stop,
