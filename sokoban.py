@@ -1,10 +1,12 @@
-from z3 import Array, IntSort, Int, Bool, Select, Implies, And, Or, If, Solver, sat, IntNumRef, BoolRef
+from typing import List
+
+from z3 import Array, IntSort, Int, Bool, Select, Implies, And, Or, If, Solver, sat, IntNumRef, ArrayRef, BoolRef
 
 from path import reachable
 from utils import A_before_B
 from constants import *
 
-### env
+
 # k: number of steps to try
 def findSolution(level: list[list[int]], start_pos: int, k: int):
     n = len(level)
@@ -25,6 +27,75 @@ def findSolution(level: list[list[int]], start_pos: int, k: int):
             s.add(Select(env, i) < TILE_CAP)
             
     # track the text blocks
+    wall_is_stop = add_text_block_constraints(s, n, envs, level, k)
+    
+    ### player positions
+    goal_pos = add_goal_constraints(s, n_sq, envs)
+    x_positions, y_positions = add_position_constraints(s, n_z3, start_pos, k)
+    
+    ### moves
+    moves = [Int(f'move_{i}') for i in range(k)]
+    src_x_arr = [Int(f'src_x_{i}') for i in range(k)]
+    src_y_arr = [Int(f'src_y_{i}') for i in range(k)]
+    
+    # limits on these values and indices
+    for i in range(k):
+        s.add(moves[i] >= 0)
+        s.add(moves[i] < 4)
+        
+        s.add(And(src_x_arr[i] >= 0, src_x_arr[i] < n))
+        s.add(And(src_y_arr[i] >= 0, src_y_arr[i] < n))
+    
+    for i in range(k):
+        add_step_constraints(s, i, n_z3, n_sq, envs, moves, x_positions, y_positions, src_x_arr, src_y_arr, wall_is_stop)
+    
+    ### satisfiability: goal is reachable for player
+    # TODO: max_steps should be able to be set by the user
+    is_reachable, _, _ = reachable(
+        n_z3, envs[k], x_positions[k], y_positions[k], goal_pos, wall_is_stop[k], max_steps=20, meta_index=k+1
+    )
+    
+    s.add(is_reachable)
+    
+    result = s.check()
+    
+    if result == sat:
+        m = s.model()
+        return m
+    else:
+        return None        
+
+
+def add_goal_constraints(s: Solver, n_sq: int, envs: List[ArrayRef]):
+    goal_pos = Int('goal_pos')
+    
+    s.add(goal_pos >= 0)
+    s.add(goal_pos < n_sq)
+    
+    s.add(Select(envs[0], goal_pos) == GOAL)
+    
+    return goal_pos
+
+
+def add_position_constraints(s: Solver, n_z3: IntNumRef, start_pos: int, k: int):
+    x_positions = [Int(f'player_pos_x_{i}') for i in range(k + 1)]
+    y_positions = [Int(f'player_pos_y_{i}') for i in range(k + 1)]
+    
+    # basic limits on the range of these indices
+    for i in range(k + 1):
+        s.add(x_positions[i] >= 0)
+        s.add(y_positions[i] >= 0)
+        s.add(x_positions[i] < n_z3)
+        s.add(y_positions[i] < n_z3)
+    
+    # init player's starting position and mark goal position
+    s.add(x_positions[0] == start_pos % n_z3)
+    s.add(y_positions[0] == start_pos / n_z3)
+    
+    return (x_positions, y_positions)
+
+
+def add_text_block_constraints(s: Solver, n: int, envs: List[ArrayRef], level: List[List[int]],  k: int):
     wall_text_x = [Int(f'wall_text_x_{i}') for i in range(k + 1)]
     wall_text_y = [Int(f'wall_text_y_{i}') for i in range(k + 1)]
     wall_text_present = False
@@ -55,136 +126,96 @@ def findSolution(level: list[list[int]], start_pos: int, k: int):
         [s.add(isstop_text_x[i] == -1) for i in range(k+1)]
         [s.add(isstop_text_y[i] == -1) for i in range(k+1)]
     
-    ### player positions
-    x_positions = [Int(f'player_pos_x_{i}') for i in range(k + 1)]
-    y_positions = [Int(f'player_pos_y_{i}') for i in range(k + 1)]
-    goal_pos = Int('goal_pos')
+    return wall_is_stop
+
+
+# for now, only worry about specifying single pushables (no stacks, only one pushable gets pushed)
+# TODO: generalize to stacks
+def add_step_constraints(s: Solver,
+    i: int,
+    n_z3: IntNumRef,
+    n_sq: int,
+    envs: List[ArrayRef],
+    moves: List[IntNumRef],
+    x_positions: List[IntNumRef],
+    y_positions: List[IntNumRef],
+    src_x_arr: List[IntNumRef],
+    src_y_arr: List[IntNumRef],
+    wall_is_stop: List[BoolRef]
+):
+    src_x = src_x_arr[i]
+    src_y = src_y_arr[i]
+    src = src_x + n_z3*src_y
     
-    # basic limits on the range of these indices
-    for i in range(k + 1):
-        s.add(x_positions[i] >= 0)
-        s.add(y_positions[i] >= 0)
-        s.add(x_positions[i] < n_z3)
-        s.add(y_positions[i] < n_z3)
+    dst_x = Int(f'dst_x_{i}')
+    dst_y = Int(f'dst_y_{i}')
+    dst = dst_x + n_z3*dst_y
     
-    s.add(goal_pos >= 0)
-    s.add(goal_pos < n_sq)
+    opp_x = Int(f'opp_x_{i}') # x of the tile opposite from dst
+    opp_y = Int(f'opp_y_{i}') # y of the tile opposite from dst
+    opp = opp_x + n_z3*opp_y # tile opposite from dst
     
-    # init player's starting position and mark goal position
-    s.add(x_positions[0] == start_pos % n_z3)
-    s.add(y_positions[0] == start_pos / n_z3)
-    s.add(Select(envs[0], goal_pos) == GOAL)
+    src_tile = Select(envs[i], src)
+    dst_tile = Select(envs[i], dst)
+    opp_tile = Select(envs[i], opp)
     
-    ### moves
-    moves = [Int(f'move_{i}') for i in range(k)]
-    src_x_arr = [Int(f'src_x_{i}') for i in range(k)]
-    src_y_arr = [Int(f'src_y_{i}') for i in range(k)]
-    dst_x_arr = [Int(f'dst_x_{i}') for i in range(k)] # TODO: can maybe refactor these out
-    dst_y_arr = [Int(f'dst_y_{i}') for i in range(k)]
+    # only a box/pushable object gets moved
+    s.add(src_tile >= BOX)
     
-    # limits on these values and indices
-    for i in range(k):
-        s.add(moves[i] >= 0)
-        s.add(moves[i] < 4)
-        
-        s.add(And(src_x_arr[i] >= 0, src_x_arr[i] < n))
-        s.add(And(src_y_arr[i] >= 0, src_y_arr[i] < n))
-        
-        s.add(And(dst_x_arr[i] >= 0, dst_x_arr[i] < n))
-        s.add(And(dst_y_arr[i] >= 0, dst_y_arr[i] < n))
+    # pushables can only be moved to empty tiles
+    s.add(dst_tile == EMPTY)
     
-    # for now, only worry about specifying single pushables (no stacks, only one pushable gets pushed)
-    # TODO: generalize to stacks
-    for i in range(k):
-        src_x = src_x_arr[i]
-        src_y = src_y_arr[i]
-        src = src_x + n*src_y
-        
-        dst_x = dst_x_arr[i]
-        dst_y = dst_y_arr[i]
-        dst = dst_x + n*dst_y
-        
-        opp_x = Int(f'opp_x_{i}') # x of the tile opposite from dst
-        opp_y = Int(f'opp_y_{i}') # y of the tile opposite from dst
-        opp = opp_x + n*opp_y # tile opposite from dst
-        
-        src_tile = Select(envs[i], src)
-        dst_tile = Select(envs[i], dst)
-        opp_tile = Select(envs[i], opp)
-        
-        # only a box/pushable object gets moved
-        s.add(src_tile >= BOX)
-        
-        # pushables can only be moved to empty tiles
-        s.add(dst_tile == EMPTY)
-        
-        # opposite tile must be traversible and reachable
-        s.add(If(
-            wall_is_stop[i],
-            opp_tile == EMPTY,
-            Or(opp_tile == EMPTY, opp_tile == WALL)
-        ))
-        
-        is_reachable, _, _ = reachable(n_z3, envs[i], x_positions[i], y_positions[i], opp, wall_is_stop[i], max_steps=20, meta_index=i)
-        s.add(is_reachable)
-        
-        ### moves
-        # 0: left
-        # 1: right
-        # 2: up
-        # 3: down
-        s.add(Implies(moves[i] == 0,
-            And(
-                dst_x == src_x - 1, dst_y == src_y,
-                src_x > 0, src_x < n - 1,
-                opp_x == src_x + 1, opp_y == src_y
-            )
-        ))
-        
-        s.add(Implies(moves[i] == 1,
-            And(
-                dst_x == src_x + 1, dst_y == src_y, 
-                src_x > 0, src_x < n - 1, 
-                opp_x == src_x - 1, opp_y == src_y
-            )   
-        ))
-        
-        s.add(Implies(moves[i] == 2,
-            And(
-                dst_y == src_y + 1, dst_x == src_x,
-                src_y > 0, src_y < n - 1,
-                opp_y == src_y - 1, opp_x == src_x,
-            )
-        ))
-        
-        s.add(Implies(moves[i] == 3,
-            And(
-                dst_y == src_y - 1, dst_x == src_x,
-                src_y > 0, src_y < n - 1,
-                opp_y == src_y + 1, opp_x == src_x,
-            )
-        ))
+    # opposite tile must be traversible and reachable
+    s.add(If(
+        wall_is_stop[i],
+        opp_tile == EMPTY,
+        Or(opp_tile == EMPTY, opp_tile == WALL)
+    ))
     
-        for j in range(n_sq):
-            s.add(Implies(And(j != src, j != dst), Select(envs[i+1], j) == Select(envs[i], j)))
-        
-        s.add(Select(envs[i+1], dst) == src_tile)
-        s.add(Select(envs[i+1], src) == EMPTY)
-        s.add(x_positions[i+1] == src_x)
-        s.add(y_positions[i+1] == src_y)
-    
-    ### satisfiability: goal is reachable for player
-    # TODO: max_steps should be able to be set by the user
-    is_reachable, _, _ = reachable(
-        n_z3, envs[k], x_positions[k], y_positions[k], goal_pos, wall_is_stop[k], max_steps=20, meta_index=k+1
-    )
-    
+    is_reachable, _, _ = reachable(n_z3, envs[i], x_positions[i], y_positions[i], opp, wall_is_stop[i], max_steps=20, meta_index=i)
     s.add(is_reachable)
     
-    result = s.check()
+    ### moves
+    # 0: left
+    # 1: right
+    # 2: up
+    # 3: down
+    s.add(Implies(moves[i] == 0,
+        And(
+            dst_x == src_x - 1, dst_y == src_y,
+            src_x > 0, src_x < n_z3 - 1,
+            opp_x == src_x + 1, opp_y == src_y
+        )
+    ))
     
-    if result == sat:
-        m = s.model()
-        return m
-    else:
-        return None        
+    s.add(Implies(moves[i] == 1,
+        And(
+            dst_x == src_x + 1, dst_y == src_y, 
+            src_x > 0, src_x < n_z3 - 1, 
+            opp_x == src_x - 1, opp_y == src_y
+        )   
+    ))
+    
+    s.add(Implies(moves[i] == 2,
+        And(
+            dst_y == src_y + 1, dst_x == src_x,
+            src_y > 0, src_y < n_z3 - 1,
+            opp_y == src_y - 1, opp_x == src_x,
+        )
+    ))
+    
+    s.add(Implies(moves[i] == 3,
+        And(
+            dst_y == src_y - 1, dst_x == src_x,
+            src_y > 0, src_y < n_z3 - 1,
+            opp_y == src_y + 1, opp_x == src_x,
+        )
+    ))
+
+    for j in range(n_sq):
+        s.add(Implies(And(j != src, j != dst), Select(envs[i+1], j) == Select(envs[i], j)))
+    
+    s.add(Select(envs[i+1], dst) == src_tile)
+    s.add(Select(envs[i+1], src) == EMPTY)
+    s.add(x_positions[i+1] == src_x)
+    s.add(y_positions[i+1] == src_y)

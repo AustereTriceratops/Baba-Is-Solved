@@ -24,7 +24,6 @@ def reachable(
     constraints.append(step_count <= max_steps)
     
     ### positions
-    #player_positions = [Int(f'pos_{meta_index}_{i}') for i in range(num_steps + 1)]
     x_positions = [Int(f'x_{meta_index}_{i}') for i in range(max_steps + 1)]
     y_positions = [Int(f'y_{meta_index}_{i}') for i in range(max_steps + 1)]
     
@@ -127,4 +126,3 @@ def findPath(environment: list[list[int]], start_pos: int, max_steps: int, wall_
         return [(m[x_positions[i]].as_long(), m[y_positions[i]].as_long()) for i in range(n_steps + 1)]
     else:
         return None
-        
