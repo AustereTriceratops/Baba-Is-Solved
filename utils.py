@@ -1,7 +1,7 @@
 from PIL import Image
 import os
 
-from z3 import Not, Or, And, IntNumRef, BoolRef
+from z3 import Not, Or, And, IntNumRef, BoolRef, Solver, sat, ModelRef
 from constants import *
 
 s_int = IntNumRef | int
@@ -23,6 +23,15 @@ def A_before_B(x_1: s_int, y_1: s_int, x_2: s_int, y_2: s_int, n: s_int) -> Bool
 def A_below_B(x_1: s_int, y_1: s_int, x_2: s_int, y_2: s_int, n: s_int) -> BoolRef:
     return And(y_1 + 1 == y_2, x_1 == x_2, y_1 < n - 1)
 
+
+def check_solver(s: Solver) -> ModelRef | None:
+    result = s.check()
+    
+    if result == sat:
+        m = s.model()
+        return m
+    else:
+        return None     
 
 class ImageGen:
     baba_sprite = Image.open(os.path.join('assets', 'baba.png'))

@@ -3,12 +3,13 @@ from typing import List
 from z3 import Array, IntSort, Int, Bool, Select, Implies, And, Or, If, Solver, sat, IntNumRef, ArrayRef, BoolRef
 
 from path import reachable
-from utils import A_before_B
+from utils import A_before_B, check_solver
 from constants import *
 
 
-# k: number of steps to try
-# r: max search length for pathfinding subproblem
+### level: an (n, n) tile grid. Every entry should be a tile id number from consts.py
+### k: number of steps to try
+### r: max search length for pathfinding subproblem
 def findSolution(level: list[list[int]], start_pos: int, k: int, r = 20):
     n = len(level)
     n_sq = n*n
@@ -19,19 +20,13 @@ def findSolution(level: list[list[int]], start_pos: int, k: int, r = 20):
     s.add(n_z3 == n)
     
     ### level
-    envs = [Array(f'env_{i}', IntSort(), IntSort()) for i in range(k + 1)]
-
-    # basic limits on what levels can contain (based on the env names at the top)
-    for env in envs:
-        for i in range(n_sq):
-            s.add(Select(env, i) >= 0)
-            s.add(Select(env, i) < TILE_CAP)
-            
-    # track the text blocks
+    envs = add_level_constraints(s, n_sq, k)
+    
     wall_is_stop = add_text_block_constraints(s, n, envs, level, k)
     
-    ### player positions
     goal_pos = add_goal_constraints(s, n_sq, envs)
+    
+    ### player positions
     x_positions, y_positions = add_position_constraints(s, n_z3, start_pos, k)
     
     ### moves
@@ -57,13 +52,7 @@ def findSolution(level: list[list[int]], start_pos: int, k: int, r = 20):
     
     s.add(is_reachable)
     
-    result = s.check()
-    
-    if result == sat:
-        m = s.model()
-        return m
-    else:
-        return None        
+    return check_solver(s)
 
 
 def add_goal_constraints(s: Solver, n_sq: int, envs: List[ArrayRef]):
@@ -93,6 +82,18 @@ def add_position_constraints(s: Solver, n_z3: IntNumRef, start_pos: int, k: int)
     s.add(y_positions[0] == start_pos / n_z3)
     
     return (x_positions, y_positions)
+
+
+def add_level_constraints(s: Solver, n_sq: int, k: int):
+    envs = [Array(f'env_{i}', IntSort(), IntSort()) for i in range(k + 1)]
+
+    # basic limits on what levels can contain (based on the env names at the top)
+    for env in envs:
+        for i in range(n_sq):
+            s.add(Select(env, i) >= 0)
+            s.add(Select(env, i) < TILE_CAP)
+    
+    return envs
 
 
 def add_text_block_constraints(s: Solver, n: int, envs: List[ArrayRef], level: List[List[int]],  k: int):
@@ -218,7 +219,11 @@ def add_step_constraints(s: Solver,
     ))
 
     for j in range(n_sq):
-        s.add(Implies(And(j != src, j != dst), Select(envs[i+1], j) == Select(envs[i], j)))
+        s.add(If(
+            And(j != src, j != dst),
+            Select(envs[i+1], j) == Select(envs[i], j),
+            True
+        ))
     
     s.add(Select(envs[i+1], dst) == src_tile)
     s.add(Select(envs[i+1], src) == EMPTY)
