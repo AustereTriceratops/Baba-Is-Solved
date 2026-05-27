@@ -1,7 +1,6 @@
-from z3 import Array, IntSort, Int, Select, Not, Implies, Xor, And, If, Solver, sat, ArrayRef, IntNumRef, BoolRef
+from z3 import Array, IntSort, Int, Select, ForAll, And, Implies, If, Solver, sat, ArrayRef, IntNumRef, BoolRef
 
 from constants import *
-from utils import Xnor
 
 ### env encoding
 # 0: empty
@@ -42,49 +41,92 @@ def reachable(
         constraints.append(If(i == step_count, x_positions[i] + n*y_positions[i] == goal_pos, True))
     
     ### movement
-    # 0: stay
-    # 1: left
-    # 2: right
-    # 3: up
-    # 4: down
+    # 0: left
+    # 1: right
+    # 2: up
+    # 3: down
     moves = [Int(f'move_{meta_index}_{i}') for i in range(max_steps)]
     
-    for i,move in enumerate(moves):
+    for i, move in enumerate(moves):
         constraints.append(move >= 0)
-        constraints.append(move < 5)
+        constraints.append(move < 4)
         
         prev_x = x_positions[i]
         prev_y = y_positions[i]
         
+        move_len = Int(f'move_len_{meta_index}_{i}')
+        constraints.append(And(move_len >= 0, move_len < n))
+        mv = Int(f'move_intermediate_{meta_index}_{i}')
+        
         # if the player is at the goal position, don't bother moving
-        constraints.append(If(prev_x + n*prev_y == goal_pos, move == 0, move != 0))
+        constraints.append(If(
+            prev_x + n*prev_y == goal_pos, move_len == 0, move_len != 0
+        ))
         
         # movement conditions
+        # constraints.append(If(move == 0, And(
+        #     x_positions[i+1] == prev_x, y_positions[i+1] == prev_y, 
+        # ), True))
+        
         constraints.append(If(move == 0, And(
-            x_positions[i+1] == prev_x, y_positions[i+1] == prev_y
+            x_positions[i+1] == prev_x - move_len,
+            y_positions[i+1] == prev_y,
+            prev_x >= move_len,
+            ForAll([mv],
+                Implies(
+                    And(mv >= x_positions[i+1], mv < prev_x),
+                    If(wall_is_stop,
+                        Select(env, mv + n*y_positions[i+1]) < WALL,
+                        Select(env, mv + n*y_positions[i+1]) < BOX
+                    )
+                )
+            )
         ), True))
         
         constraints.append(If(move == 1, And(
-            x_positions[i+1] == prev_x - 1, y_positions[i+1] == prev_y, prev_x >= 1
+            x_positions[i+1] == prev_x + move_len,
+            y_positions[i+1] == prev_y,
+            prev_x + move_len < n,
+            ForAll([mv],
+                Implies(
+                    And(mv <= x_positions[i+1], mv > prev_x),
+                    If(wall_is_stop,
+                        Select(env, mv + n*y_positions[i+1]) < WALL,
+                        Select(env, mv + n*y_positions[i+1]) < BOX
+                    )
+                )
+            )
         ), True))
         
         constraints.append(If(move == 2, And(
-            x_positions[i+1] == prev_x + 1, y_positions[i+1] == prev_y, prev_x < n - 1
+            y_positions[i+1] == prev_y + move_len,
+            x_positions[i+1] == prev_x,
+            prev_y + move_len < n,
+            ForAll([mv],
+                Implies(
+                    And(mv <= y_positions[i+1], mv > prev_y),
+                    If(wall_is_stop,
+                        Select(env, x_positions[i+1] + n*mv) < WALL,
+                        Select(env, x_positions[i+1] + n*mv) < BOX
+                    )
+                )
+            )
         ), True))
         
         constraints.append(If(move == 3, And(
-            y_positions[i+1] == prev_y + 1, x_positions[i+1] == prev_x, prev_y < n - 1
+            y_positions[i+1] == prev_y - move_len,
+            x_positions[i+1] == prev_x,
+            prev_y >= move_len,
+            ForAll([mv],
+                Implies(
+                    And(mv >= y_positions[i+1], mv < prev_y), 
+                    If(wall_is_stop,
+                        Select(env, x_positions[i+1] + n*mv) < WALL,
+                        Select(env, x_positions[i+1] + n*mv) < BOX
+                    )
+                )
+            )
         ), True))
-        
-        constraints.append(If(move == 4, And(
-            y_positions[i+1] == prev_y - 1, x_positions[i+1] == prev_x, prev_y >= 1
-        ), True))
-        
-        # player cannot move through walls iff wall_is_stop is true
-        constraints.append(If(wall_is_stop,
-            Select(env, x_positions[i+1] + n*y_positions[i+1]) < WALL,
-            Select(env, x_positions[i+1] + n*y_positions[i+1]) < BOX
-        ))
     
     return And(constraints), (x_positions, y_positions), step_count
 
