@@ -154,6 +154,16 @@ class TestPath(unittest.TestCase):
         
         self.assertIsNone(findPath(env, 7, 2))
         self.assertIsNotNone(findPath(env, 7, 3))
+        
+        env = [
+            [0, 0, 0, 0],
+            [0, 2, 2, 0],
+            [0, 1, 2, 0],
+            [0, 0, 2, 0],
+        ]
+        
+        self.assertIsNone(findPath(env, 7, 3))
+        self.assertIsNotNone(findPath(env, 7, 4))
     
     def test_large_move_numbers(self):
         env = [

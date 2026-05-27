@@ -1,4 +1,4 @@
-from z3 import Array, IntSort, Int, Select, ForAll, And, Implies, If, Solver, sat, ArrayRef, IntNumRef, BoolRef
+from z3 import Array, IntSort, Int, Select, ForAll, And, If, Solver, sat, ArrayRef, IntNumRef, BoolRef
 
 from constants import *
 
@@ -63,22 +63,18 @@ def reachable(
             prev_x + n*prev_y == goal_pos, move_len == 0, move_len != 0
         ))
         
-        # movement conditions
-        # constraints.append(If(move == 0, And(
-        #     x_positions[i+1] == prev_x, y_positions[i+1] == prev_y, 
-        # ), True))
-        
         constraints.append(If(move == 0, And(
             x_positions[i+1] == prev_x - move_len,
             y_positions[i+1] == prev_y,
             prev_x >= move_len,
             ForAll([mv],
-                Implies(
+                If(
                     And(mv >= x_positions[i+1], mv < prev_x),
                     If(wall_is_stop,
                         Select(env, mv + n*y_positions[i+1]) < WALL,
                         Select(env, mv + n*y_positions[i+1]) < BOX
-                    )
+                    ),
+                    True
                 )
             )
         ), True))
@@ -88,12 +84,13 @@ def reachable(
             y_positions[i+1] == prev_y,
             prev_x + move_len < n,
             ForAll([mv],
-                Implies(
+                If(
                     And(mv <= x_positions[i+1], mv > prev_x),
                     If(wall_is_stop,
                         Select(env, mv + n*y_positions[i+1]) < WALL,
                         Select(env, mv + n*y_positions[i+1]) < BOX
-                    )
+                    ),
+                    True
                 )
             )
         ), True))
@@ -103,12 +100,13 @@ def reachable(
             x_positions[i+1] == prev_x,
             prev_y + move_len < n,
             ForAll([mv],
-                Implies(
+                If(
                     And(mv <= y_positions[i+1], mv > prev_y),
                     If(wall_is_stop,
                         Select(env, x_positions[i+1] + n*mv) < WALL,
                         Select(env, x_positions[i+1] + n*mv) < BOX
-                    )
+                    ),
+                    True
                 )
             )
         ), True))
@@ -118,12 +116,13 @@ def reachable(
             x_positions[i+1] == prev_x,
             prev_y >= move_len,
             ForAll([mv],
-                Implies(
+                If(
                     And(mv >= y_positions[i+1], mv < prev_y), 
                     If(wall_is_stop,
                         Select(env, x_positions[i+1] + n*mv) < WALL,
                         Select(env, x_positions[i+1] + n*mv) < BOX
-                    )
+                    ),
+                    True
                 )
             )
         ), True))
