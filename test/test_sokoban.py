@@ -74,15 +74,26 @@ class TestPath(unittest.TestCase):
             [0, 0, 3, 0],
             [0, 2, 1, 2],
         ]
-        self.assertIsNone(findSolution(env, 0, 2, r=3))
-        self.assertIsNotNone(findSolution(env, 0, 3, r=3))
+        self.assertIsNone(findSolution(env, 0, 1, r=3))
+        self.assertIsNotNone(findSolution(env, 0, 2, r=3))
+        
+        env = [
+            [EMPTY, WALL , EMPTY, EMPTY, EMPTY],
+            [EMPTY, EMPTY, EMPTY, EMPTY, EMPTY],
+            [EMPTY, WALL , EMPTY, EMPTY, EMPTY],
+            [BOX  , WALL , EMPTY, EMPTY, EMPTY],
+            [EMPTY, WALL , EMPTY, GOAL , EMPTY]
+        ]
+        self.assertIsNotNone(findSolution(env, 12, 1, r=3))
+        
+        
     
     def test_wall_not_stop(self):
         env = [
-            [0, 0, 0, 0],
-            [0, 0, 2, 3],
-            [4, 5, 3, 1],
-            [0, 0, 0, 0],
+            [EMPTY   , EMPTY   , EMPTY, EMPTY],
+            [EMPTY   , EMPTY   , WALL , BOX],
+            [WALL_TXT, STOP_TXT, BOX  , GOAL],
+            [EMPTY   , EMPTY   , EMPTY, EMPTY],
         ]
         
         self.assertIsNone(findSolution(env, 0, 1, r=3))

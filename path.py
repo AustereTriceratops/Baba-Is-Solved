@@ -56,7 +56,7 @@ def reachable(
         
         move_len = Int(f'move_len_{meta_index}_{i}')
         constraints.append(And(move_len >= 0, move_len < n))
-        mv = Int(f'move_intermediate_{meta_index}_{i}')
+        mv = Int(f'move_forall_{meta_index}_{i}')
         
         # if the player is at the goal position, don't bother moving
         constraints.append(If(

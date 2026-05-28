@@ -77,7 +77,7 @@ class TestPath(unittest.TestCase):
             [EMPTY, EMPTY, EMPTY, EMPTY],
             [EMPTY, EMPTY, EMPTY, EMPTY],
             [EMPTY, EMPTY, EMPTY, EMPTY],
-            [GOAL, EMPTY, EMPTY, EMPTY],
+            [GOAL , EMPTY, EMPTY, EMPTY],
         ]
         self.assertIsNotNone(findPath(env, 3, 2))
     

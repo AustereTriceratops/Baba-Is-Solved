@@ -1,6 +1,6 @@
 from typing import List
 
-from z3 import Array, IntSort, Int, Bool, Select, Implies, And, Or, If, Solver, sat, IntNumRef, ArrayRef, BoolRef
+from z3 import Array, IntSort, Int, Select, ForAll, And, Or, If, Solver, sat, IntNumRef, ArrayRef, BoolRef
 
 from path import reachable
 from utils import A_before_B, check_solver
@@ -177,6 +177,10 @@ def add_step_constraints(s: Solver,
     is_reachable, _, _ = reachable(n_z3, envs[i], x_positions[i], y_positions[i], opp, wall_is_stop[i], max_steps=r, meta_index=i)
     s.add(is_reachable)
     
+    m_len = Int(f'move_len_{i}')
+    s.add(And(m_len > 0, m_len < n_z3))
+    m_fa = Int(f'move_forall_{i}')
+    
     ### moves
     # 0: left
     # 1: right
@@ -184,36 +188,60 @@ def add_step_constraints(s: Solver,
     # 3: down
     s.add(If(moves[i] == 0,
         And(
-            dst_x == src_x - 1, dst_y == src_y,
-            src_x > 0, src_x < n_z3 - 1,
-            opp_x == src_x + 1, opp_y == src_y
+            dst_x == src_x - m_len, dst_x >= 0, dst_y == src_y,
+            opp_x == src_x + 1, opp_x < n_z3, opp_y == src_y,
+            ForAll([m_fa],
+                If(
+                    And(m_fa >= dst_x, m_fa < src_x),
+                    Select(envs[i], m_fa + n_z3*dst_y) == EMPTY,
+                    True
+                )
+            )
         ),
         True
     ))
     
     s.add(If(moves[i] == 1,
         And(
-            dst_x == src_x + 1, dst_y == src_y, 
-            src_x > 0, src_x < n_z3 - 1, 
-            opp_x == src_x - 1, opp_y == src_y
+            dst_x == src_x + m_len, dst_x < n_z3, dst_y == src_y, 
+            opp_x == src_x - 1, opp_x >= 0, opp_y == src_y,
+            ForAll([m_fa],
+                If(
+                    And(m_fa > src_x, m_fa <= dst_x),
+                    Select(envs[i], m_fa + n_z3*dst_y) == EMPTY,
+                    True
+                )
+            )
         ),
-        True  
+        True
     ))
     
     s.add(If(moves[i] == 2,
         And(
-            dst_y == src_y + 1, dst_x == src_x,
-            src_y > 0, src_y < n_z3 - 1,
-            opp_y == src_y - 1, opp_x == src_x,
+            dst_y == src_y + m_len, dst_y < n_z3, dst_x == src_x,
+            opp_y == src_y - 1, opp_y >= 0, opp_x == src_x,
+            ForAll([m_fa],
+                If(
+                    And(m_fa > src_y, m_fa <= dst_y),
+                    Select(envs[i], dst_x + n_z3*m_fa) == EMPTY,
+                    True
+                )
+            )
         ),
         True
     ))
     
     s.add(If(moves[i] == 3,
         And(
-            dst_y == src_y - 1, dst_x == src_x,
-            src_y > 0, src_y < n_z3 - 1,
-            opp_y == src_y + 1, opp_x == src_x,
+            dst_y == src_y - m_len, dst_y >= 0, dst_x == src_x,
+            opp_y == src_y + 1, opp_y < n_z3, opp_x == src_x,
+            ForAll([m_fa],
+                If(
+                    And(m_fa >= dst_y, m_fa < src_y),
+                    Select(envs[i], dst_x + n_z3*m_fa) == EMPTY,
+                    True
+                )
+            )
         ),
         True
     ))
