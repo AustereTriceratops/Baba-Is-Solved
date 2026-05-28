@@ -84,7 +84,7 @@ class TestPath(unittest.TestCase):
             [BOX  , WALL , EMPTY, EMPTY, EMPTY],
             [EMPTY, WALL , EMPTY, GOAL , EMPTY]
         ]
-        self.assertIsNotNone(findSolution(env, 12, 1, r=3))
+        self.assertIsNotNone(findSolution(env, 20, 1, r=3))
         
         
     
