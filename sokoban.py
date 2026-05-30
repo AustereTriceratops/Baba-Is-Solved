@@ -10,7 +10,7 @@ from constants import *
 ### level: an (n, n) tile grid. Every entry should be a tile id number from consts.py
 ### k: number of steps to try
 ### r: max search length for pathfinding subproblem
-def findSolution(level: list[list[int]], start_pos: int, k: int, r = 10):
+def find_solution(level: list[list[int]], start_pos: int, k: int, r = 10):
     n = len(level)
     n_sq = n*n
     

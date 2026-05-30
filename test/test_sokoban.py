@@ -1,6 +1,6 @@
 import unittest
 
-from sokoban import findSolution
+from sokoban import find_solution
 from constants import *
 
 ### env
@@ -18,21 +18,21 @@ class TestPath(unittest.TestCase):
             [2, 2, 1],
             [2, 2, 2],
         ]
-        self.assertIsNotNone(findSolution(env, 5, 0))
+        self.assertIsNotNone(find_solution(env, 5, 0))
         
         env = [
             [3, 3, 3],
             [3, 3, 1],
             [3, 3, 3],
         ]
-        self.assertIsNotNone(findSolution(env, 5, 0))
+        self.assertIsNotNone(find_solution(env, 5, 0))
         
         env = [
             [3, 3, 0],
             [3, 3, 1],
             [3, 3, 3],
         ]
-        self.assertIsNotNone(findSolution(env, 2, 0))
+        self.assertIsNotNone(find_solution(env, 2, 0))
         
         env = [
             [0, 0, 0, 0],
@@ -40,7 +40,7 @@ class TestPath(unittest.TestCase):
             [1, 0, 0, 0],
             [0, 0, 0, 0]
         ]
-        self.assertIsNotNone(findSolution(env, 8, 0))
+        self.assertIsNotNone(find_solution(env, 8, 0))
         
         env = [
             [0, 3, 0, 0],
@@ -48,7 +48,7 @@ class TestPath(unittest.TestCase):
             [0, 0, 0, 0],
             [0, 0, 0, 0],
         ]
-        self.assertIsNotNone(findSolution(env, 2, 0))
+        self.assertIsNotNone(find_solution(env, 2, 0))
         
         
     def test_basic_puzzles(self):
@@ -57,7 +57,7 @@ class TestPath(unittest.TestCase):
             [3, 0, 1],
             [0, 0, 0],
         ]
-        self.assertIsNotNone(findSolution(env, 0, 1, r=3))
+        self.assertIsNotNone(find_solution(env, 0, 1, r=3))
         
         # this puzzle can be solved in 2 moves but not 1
         env = [
@@ -65,8 +65,8 @@ class TestPath(unittest.TestCase):
             [3, 3, 1],
             [0, 0, 0],
         ]
-        self.assertIsNone(findSolution(env, 0, 1, r=3))
-        self.assertIsNotNone(findSolution(env, 0, 2, r=3))
+        self.assertIsNone(find_solution(env, 0, 1, r=3))
+        self.assertIsNotNone(find_solution(env, 0, 2, r=3))
         
         env = [
             [0, 3, 0, 0],
@@ -74,8 +74,8 @@ class TestPath(unittest.TestCase):
             [0, 0, 3, 0],
             [0, 2, 1, 2],
         ]
-        self.assertIsNone(findSolution(env, 0, 1, r=3))
-        self.assertIsNotNone(findSolution(env, 0, 2, r=3))
+        self.assertIsNone(find_solution(env, 0, 1, r=3))
+        self.assertIsNotNone(find_solution(env, 0, 2, r=3))
         
         env = [
             [EMPTY, WALL , EMPTY, EMPTY, EMPTY],
@@ -84,7 +84,7 @@ class TestPath(unittest.TestCase):
             [BOX  , WALL , EMPTY, EMPTY, EMPTY],
             [EMPTY, WALL , EMPTY, GOAL , EMPTY]
         ]
-        self.assertIsNotNone(findSolution(env, 20, 1, r=3))
+        self.assertIsNotNone(find_solution(env, 20, 1, r=3))
         
         
     
@@ -96,8 +96,8 @@ class TestPath(unittest.TestCase):
             [EMPTY   , EMPTY   , EMPTY, EMPTY],
         ]
         
-        self.assertIsNone(findSolution(env, 0, 1, r=3))
-        self.assertIsNotNone(findSolution(env, 0, 2, r=3))
+        self.assertIsNone(find_solution(env, 0, 1, r=3))
+        self.assertIsNotNone(find_solution(env, 0, 2, r=3))
         
         env = [
             [EMPTY   , EMPTY   , WALL, EMPTY],
@@ -106,4 +106,4 @@ class TestPath(unittest.TestCase):
             [EMPTY   , EMPTY   , WALL, GOAL],
         ]
         
-        self.assertIsNotNone(findSolution(env, 0, 1, r=3))
+        self.assertIsNotNone(find_solution(env, 0, 1, r=3))

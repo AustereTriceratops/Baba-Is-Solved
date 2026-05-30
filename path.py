@@ -17,6 +17,8 @@ def reachable(
     max_steps : int = 20,
     meta_index: int = 0
 ):
+    """z3-level predicate to be used as a sub-problem in a larger solver. 
+    Asks whether a 'player' can navigate to a given goal position without passing through any obstacles"""
     constraints = []
     
     step_count = Int(f'step_count_{meta_index}')
@@ -130,7 +132,8 @@ def reachable(
     return And(constraints), (x_positions, y_positions), step_count
 
 ### start_pos: index of the player's starting position 0 <= start_pos < n_sq
-def findPath(environment: list[list[int]], start_pos: int, max_steps: int, wall_is_stop=True):
+def find_path(environment: list[list[int]], start_pos: int, max_steps: int, wall_is_stop=True):
+    """Find a path from start_pos to the goal tile"""
     n = len(environment)
     n_sq = n**2
     start_x = start_pos % n
@@ -142,7 +145,7 @@ def findPath(environment: list[list[int]], start_pos: int, max_steps: int, wall_
     s.add(n_z3 == n)
     
     ### environment states
-    env = Array(f'env', IntSort(), IntSort())
+    env = Array('env', IntSort(), IntSort())
     
     # initialize the environment
     for i in range(n):

@@ -1,7 +1,8 @@
 import unittest
-from z3 import is_true, simplify
 
-from utils import A_before_B, A_below_B, are_adjacent
+from z3 import simplify
+
+from utils import A_before_B, A_below_B
 
 class TestPath(unittest.TestCase):
     def test_A_before_B_true(self):

@@ -1,6 +1,6 @@
 import unittest
 
-from path import findPath
+from path import find_path
 from constants import *
 
 class TestPath(unittest.TestCase):
@@ -9,14 +9,14 @@ class TestPath(unittest.TestCase):
             [0, 1],
             [0, 2]
         ]
-        self.assertIsNotNone(findPath(env, 1, 0))
+        self.assertIsNotNone(find_path(env, 1, 0))
         
         env = [
             [0, 0, 0],
             [0, 1, 0],
             [0, 0, 0]
         ]
-        self.assertIsNotNone(findPath(env, 4, 0))
+        self.assertIsNotNone(find_path(env, 4, 0))
     
       
     def test_movement(self):
@@ -25,28 +25,28 @@ class TestPath(unittest.TestCase):
             [1, 0, 0],
             [0, 0, 0],
         ]
-        self.assertIsNotNone(findPath(env, 0, 1))
+        self.assertIsNotNone(find_path(env, 0, 1))
         
         env = [
             [0, 1, 0],
             [0, 0, 0],
             [0, 0, 0],
         ]
-        self.assertIsNotNone(findPath(env, 0, 1))
+        self.assertIsNotNone(find_path(env, 0, 1))
         
         env = [
             [0, 0, 0],
             [0, 0, 0],
             [0, 0, 1],
         ]
-        self.assertIsNotNone(findPath(env, 0, 2))
+        self.assertIsNotNone(find_path(env, 0, 2))
         
         env = [
             [31, 3, 0],
             [3, 7, 1],
             [1146, 3, 3],
         ]
-        self.assertIsNotNone(findPath(env, 2, 1))
+        self.assertIsNotNone(find_path(env, 2, 1))
     
     def test_symmetry(self):
         env = [
@@ -55,7 +55,7 @@ class TestPath(unittest.TestCase):
             [EMPTY, EMPTY, EMPTY, EMPTY],
             [EMPTY, EMPTY, EMPTY, EMPTY],
         ]
-        self.assertIsNotNone(findPath(env, 15, 2))
+        self.assertIsNotNone(find_path(env, 15, 2))
         
         env = [
             [EMPTY, EMPTY, EMPTY, EMPTY],
@@ -63,7 +63,7 @@ class TestPath(unittest.TestCase):
             [EMPTY, EMPTY, EMPTY, EMPTY],
             [EMPTY, EMPTY, EMPTY, GOAL],
         ]
-        self.assertIsNotNone(findPath(env, 0, 2))
+        self.assertIsNotNone(find_path(env, 0, 2))
         
         env = [
             [EMPTY, EMPTY, EMPTY, GOAL],
@@ -71,7 +71,7 @@ class TestPath(unittest.TestCase):
             [EMPTY, EMPTY, EMPTY, EMPTY],
             [EMPTY, EMPTY, EMPTY, EMPTY],
         ]
-        self.assertIsNotNone(findPath(env, 12, 2))
+        self.assertIsNotNone(find_path(env, 12, 2))
         
         env = [
             [EMPTY, EMPTY, EMPTY, EMPTY],
@@ -79,7 +79,7 @@ class TestPath(unittest.TestCase):
             [EMPTY, EMPTY, EMPTY, EMPTY],
             [GOAL , EMPTY, EMPTY, EMPTY],
         ]
-        self.assertIsNotNone(findPath(env, 3, 2))
+        self.assertIsNotNone(find_path(env, 3, 2))
     
     
     def test_obstacles(self):
@@ -88,42 +88,42 @@ class TestPath(unittest.TestCase):
             [2, 2, 2],
             [0, 0, 1],
         ]
-        self.assertIsNone(findPath(env, 0, 2))
+        self.assertIsNone(find_path(env, 0, 2))
         
         env = [
             [0, 2, 0],
             [2, 2, 0],
             [0, 0, 1],
         ]
-        self.assertIsNone(findPath(env, 0, 2))
+        self.assertIsNone(find_path(env, 0, 2))
         
         env = [
             [0, 2, 0],
             [0, 2, 0],
             [0, 2, 1],
         ]
-        self.assertIsNone(findPath(env, 0, 2))
+        self.assertIsNone(find_path(env, 0, 2))
         
         env = [
             [0, 2, 0],
             [2, 1, 0],
             [0, 0, 0],
         ]
-        self.assertIsNone(findPath(env, 0, 2))
+        self.assertIsNone(find_path(env, 0, 2))
         
         env = [
             [0, 3, 0],
             [3, 1, 0],
             [0, 0, 0],
         ]
-        self.assertIsNone(findPath(env, 0, 2))
+        self.assertIsNone(find_path(env, 0, 2))
         
         env = [
             [0, 3, 0],
             [3, 1, 0],
             [0, 0, 0],
         ]
-        self.assertIsNone(findPath(env, 0, 2))
+        self.assertIsNone(find_path(env, 0, 2))
         
         env = [
             [0, 3, 0, 0],
@@ -131,7 +131,7 @@ class TestPath(unittest.TestCase):
             [0, 3, 3, 0],
             [0, 2, 1, 2],
         ]
-        self.assertIsNone(findPath(env, 2, 4))
+        self.assertIsNone(find_path(env, 2, 4))
     
     
     def test_pathing_around_obstacles(self):
@@ -141,9 +141,9 @@ class TestPath(unittest.TestCase):
             [1, 0, 0]
         ]
         
-        self.assertIsNone(findPath(env, 1, 1))
-        self.assertIsNone(findPath(env, 1, 2))
-        self.assertIsNotNone(findPath(env, 1, 3))
+        self.assertIsNone(find_path(env, 1, 1))
+        self.assertIsNone(find_path(env, 1, 2))
+        self.assertIsNotNone(find_path(env, 1, 3))
         
         env = [
             [0, 0, 0, 0],
@@ -152,8 +152,8 @@ class TestPath(unittest.TestCase):
             [0, 2, 0, 0],
         ]
         
-        self.assertIsNone(findPath(env, 7, 2))
-        self.assertIsNotNone(findPath(env, 7, 3))
+        self.assertIsNone(find_path(env, 7, 2))
+        self.assertIsNotNone(find_path(env, 7, 3))
         
         env = [
             [0, 0, 0, 0],
@@ -162,8 +162,8 @@ class TestPath(unittest.TestCase):
             [0, 0, 2, 0],
         ]
         
-        self.assertIsNone(findPath(env, 7, 3))
-        self.assertIsNotNone(findPath(env, 7, 4))
+        self.assertIsNone(find_path(env, 7, 3))
+        self.assertIsNotNone(find_path(env, 7, 4))
     
     def test_large_move_numbers(self):
         env = [
@@ -173,7 +173,7 @@ class TestPath(unittest.TestCase):
             [0, 2, 0, 0],
         ]
         
-        self.assertIsNotNone(findPath(env, 15, 3))
+        self.assertIsNotNone(find_path(env, 15, 3))
         
         env = [
             [0, 2, 0, 0, 0, 2, 1],
@@ -185,7 +185,7 @@ class TestPath(unittest.TestCase):
             [0, 0, 0, 2, 0, 0, 0],
         ]
         
-        self.assertIsNotNone(findPath(env, 0, 20))
+        self.assertIsNotNone(find_path(env, 0, 20))
     
     def test_wall_not_stop_pathing(self):
         env = [
@@ -195,4 +195,4 @@ class TestPath(unittest.TestCase):
             [0, 2, 0, 0],
         ]
         
-        self.assertIsNotNone(findPath(env, 0, 2, wall_is_stop=False))
+        self.assertIsNotNone(find_path(env, 0, 2, wall_is_stop=False))
