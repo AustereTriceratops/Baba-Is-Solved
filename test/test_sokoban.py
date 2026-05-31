@@ -3,76 +3,69 @@ import unittest
 from sokoban import find_solution
 from constants import *
 
-### env
-# 0: empty
-# 1: goal
-# 2: wall
-# >= 3: pushable
-# 3: box
-# 4: wall text
-# 5: is stop text
+
 class TestPath(unittest.TestCase):
     def test_already_solved(self):
         env = [
-            [2, 2, 2],
-            [2, 2, 1],
-            [2, 2, 2],
+            [WALL, WALL, WALL],
+            [WALL, WALL, GOAL],
+            [WALL, WALL, WALL],
         ]
         self.assertIsNotNone(find_solution(env, 5, 0))
         
         env = [
-            [3, 3, 3],
-            [3, 3, 1],
-            [3, 3, 3],
+            [BOX, BOX, BOX],
+            [BOX, BOX, GOAL],
+            [BOX, BOX, BOX],
         ]
         self.assertIsNotNone(find_solution(env, 5, 0))
         
         env = [
-            [3, 3, 0],
-            [3, 3, 1],
-            [3, 3, 3],
+            [BOX, BOX, EMPTY],
+            [BOX, BOX, GOAL],
+            [BOX, BOX, BOX],
         ]
         self.assertIsNotNone(find_solution(env, 2, 0))
         
         env = [
-            [0, 0, 0, 0],
-            [0, 0, 0, 0],
-            [1, 0, 0, 0],
-            [0, 0, 0, 0]
+            [EMPTY, EMPTY, EMPTY, EMPTY],
+            [EMPTY, EMPTY, EMPTY, EMPTY],
+            [GOAL , EMPTY, EMPTY, EMPTY],
+            [EMPTY, EMPTY, EMPTY, EMPTY]
         ]
         self.assertIsNotNone(find_solution(env, 8, 0))
         
         env = [
-            [0, 3, 0, 0],
-            [3, 0, 1, 0],
-            [0, 0, 0, 0],
-            [0, 0, 0, 0],
+            [EMPTY, BOX  , EMPTY, EMPTY],
+            [BOX  , EMPTY, GOAL , EMPTY],
+            [EMPTY, EMPTY, EMPTY, EMPTY],
+            [EMPTY, EMPTY, EMPTY, EMPTY],
         ]
         self.assertIsNotNone(find_solution(env, 2, 0))
         
         
     def test_basic_puzzles(self):
         env = [
-            [0, 3, 0],
-            [3, 0, 1],
-            [0, 0, 0],
+            [EMPTY, BOX  , EMPTY],
+            [BOX  , EMPTY, GOAL],
+            [EMPTY, EMPTY, EMPTY],
         ]
         self.assertIsNotNone(find_solution(env, 0, 1, r=3))
         
         # this puzzle can be solved in 2 moves but not 1
         env = [
-            [0, 3, 0],
-            [3, 3, 1],
-            [0, 0, 0],
+            [EMPTY, BOX  , EMPTY],
+            [BOX  , BOX  , GOAL],
+            [EMPTY, EMPTY, EMPTY],
         ]
         self.assertIsNone(find_solution(env, 0, 1, r=3))
         self.assertIsNotNone(find_solution(env, 0, 2, r=3))
         
         env = [
-            [0, 3, 0, 0],
-            [3, 3, 0, 0],
-            [0, 0, 3, 0],
-            [0, 2, 1, 2],
+            [EMPTY, BOX  , EMPTY, EMPTY],
+            [BOX  , BOX  , EMPTY, EMPTY],
+            [EMPTY, EMPTY, BOX  , EMPTY],
+            [EMPTY, WALL , GOAL , WALL],
         ]
         self.assertIsNone(find_solution(env, 0, 1, r=3))
         self.assertIsNotNone(find_solution(env, 0, 2, r=3))

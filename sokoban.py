@@ -42,8 +42,11 @@ def find_solution(level: list[list[int]], start_pos: int, k: int, r = 10):
         s.add(And(src_x_arr[i] >= 0, src_x_arr[i] < n))
         s.add(And(src_y_arr[i] >= 0, src_y_arr[i] < n))
     
+    # constraints for each step in the solution
     for i in range(k):
-        add_step_constraints(s, i, n_z3, n_sq, r, envs, moves, x_positions, y_positions, src_x_arr, src_y_arr, wall_is_stop)
+        add_step_constraints(
+            s, i, n_z3, n_sq, r, envs, moves, x_positions, y_positions, src_x_arr, src_y_arr, wall_is_stop
+        )
     
     ### satisfiability: goal is reachable for player
     is_reachable, _, _ = reachable(
@@ -103,7 +106,9 @@ def add_text_block_constraints(s: Solver, n: int, envs: List[ArrayRef], level: L
     isstop_text_x = [Int(f'isstop_text_x_{i}') for i in range(k + 1)]
     isstop_text_y = [Int(f'isstop_text_y_{i}') for i in range(k + 1)]
     isstop_text_present = False
-    wall_is_stop = [A_before_B(wall_text_x[i], wall_text_y[i], isstop_text_x[i], isstop_text_y[i], n) for i in range(k + 1)]
+    wall_is_stop = [
+        A_before_B(wall_text_x[i], wall_text_y[i], isstop_text_x[i], isstop_text_y[i], n) for i in range(k + 1)
+    ]
     
     # init the starting level state
     for i in range(n):
@@ -174,7 +179,9 @@ def add_step_constraints(s: Solver,
         Or(opp_tile == EMPTY, opp_tile == WALL)
     ))
     
-    is_reachable, _, _ = reachable(n_z3, envs[i], x_positions[i], y_positions[i], opp, wall_is_stop[i], max_steps=r, meta_index=i)
+    is_reachable, _, _ = reachable(
+        n_z3, envs[i], x_positions[i], y_positions[i], opp, wall_is_stop[i], max_steps=r, meta_index=i
+    )
     s.add(is_reachable)
     
     apply_move(s, i, n_z3, moves, envs, src_x, src_y, dst_x, dst_y, opp_x, opp_y, x_positions, y_positions)
