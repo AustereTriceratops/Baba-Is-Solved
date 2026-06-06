@@ -5,8 +5,7 @@ from constants import *
 ### env encoding
 # 0: empty
 # 1: goal
-# 2: wall
-# >= 3: pushable/obstacle
+# >= 2: non-navigable for pathfinding
 def reachable(
     n: IntNumRef,
     env: ArrayRef,

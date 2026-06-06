@@ -22,7 +22,7 @@ def find_solution(level: list[list[int]], start_pos: int, k: int, r = 10):
     ### level
     envs = add_level_constraints(s, n_sq, k)
     
-    wall_is_stop = add_text_block_constraints(s, n, envs, level, k)
+    wall_is_stop, wall_is_sink, water_is_stop, water_is_sink = add_text_block_constraints(s, n, envs, level, k)
     
     goal_pos = add_goal_constraints(s, n_sq, envs)
     
@@ -45,7 +45,8 @@ def find_solution(level: list[list[int]], start_pos: int, k: int, r = 10):
     # constraints for each step in the solution
     for i in range(k):
         add_step_constraints(
-            s, i, n_z3, n_sq, r, envs, moves, x_positions, y_positions, src_x_arr, src_y_arr, wall_is_stop
+            s, i, n_z3, n_sq, r, envs, moves, x_positions, y_positions,
+            src_x_arr, src_y_arr, wall_is_stop, wall_is_sink
         )
     
     ### satisfiability: goal is reachable for player
@@ -103,12 +104,18 @@ def add_text_block_constraints(s: Solver, n: int, envs: List[ArrayRef], level: L
     wall_text_x = [Int(f'wall_text_x_{i}') for i in range(k + 1)]
     wall_text_y = [Int(f'wall_text_y_{i}') for i in range(k + 1)]
     wall_text_present = False
-    isstop_text_x = [Int(f'isstop_text_x_{i}') for i in range(k + 1)]
-    isstop_text_y = [Int(f'isstop_text_y_{i}') for i in range(k + 1)]
-    isstop_text_present = False
-    wall_is_stop = [
-        A_before_B(wall_text_x[i], wall_text_y[i], isstop_text_x[i], isstop_text_y[i], n) for i in range(k + 1)
-    ]
+    
+    is_stop_text_x = [Int(f'is_stop_text_x_{i}') for i in range(k + 1)]
+    is_stop_text_y = [Int(f'is_stop_text_y_{i}') for i in range(k + 1)]
+    is_stop_text_present = False
+    
+    water_text_x = [Int(f'water_text_x_{i}') for i in range(k + 1)]
+    water_text_y = [Int(f'water_text_y_{i}') for i in range(k + 1)]
+    water_text_present = False
+    
+    is_sink_text_x = [Int(f'is_sink_text_x_{i}') for i in range(k + 1)]
+    is_sink_text_y = [Int(f'is_sink_text_y_{i}') for i in range(k + 1)]
+    is_sink_text_present = False
     
     # init the starting level state
     for i in range(n):
@@ -120,19 +127,51 @@ def add_text_block_constraints(s: Solver, n: int, envs: List[ArrayRef], level: L
                 s.add(wall_text_x[0] == j)
                 s.add(wall_text_y[0] == i)
             elif level[i][j] == STOP_TXT:
-                isstop_text_present = True
-                s.add(isstop_text_x[0] == j)
-                s.add(isstop_text_y[0] == i)
+                is_stop_text_present = True
+                s.add(is_stop_text_x[0] == j)
+                s.add(is_stop_text_y[0] == i)
+            if level[i][j] == WATER_TXT:
+                water_text_present = True
+                s.add(water_text_x[0] == j)
+                s.add(water_text_y[0] == i)
+            elif level[i][j] == SINK_TXT:
+                is_sink_text_present = True
+                s.add(is_sink_text_x[0] == j)
+                s.add(is_sink_text_y[0] == i)
     
     if not wall_text_present:
         [s.add(wall_text_x[i] == -2) for i in range(k+1)]
         [s.add(wall_text_y[i] == -1) for i in range(k+1)]
         
-    if not isstop_text_present:
-        [s.add(isstop_text_x[i] == -1) for i in range(k+1)]
-        [s.add(isstop_text_y[i] == -1) for i in range(k+1)]
+    if not is_stop_text_present:
+        [s.add(is_stop_text_x[i] == -1) for i in range(k+1)]
+        [s.add(is_stop_text_y[i] == -1) for i in range(k+1)]
+        
+    if not water_text_present:
+        [s.add(water_text_x[i] == -2) for i in range(k+1)]
+        [s.add(water_text_y[i] == -2) for i in range(k+1)]
+        
+    if not is_sink_text_present:
+        [s.add(is_sink_text_x[i] == -1) for i in range(k+1)]
+        [s.add(is_sink_text_y[i] == -2) for i in range(k+1)]
+        
+    wall_is_stop = [
+        A_before_B(wall_text_x[i], wall_text_y[i], is_stop_text_x[i], is_stop_text_y[i], n) for i in range(k + 1)
+    ]
     
-    return wall_is_stop
+    wall_is_sink = [
+        A_before_B(wall_text_x[i], wall_text_y[i], is_sink_text_x[i], is_sink_text_y[i], n) for i in range(k + 1)
+    ]
+    
+    water_is_stop = [
+        A_before_B(water_text_x[i], water_text_y[i], is_stop_text_x[i], is_stop_text_y[i], n) for i in range(k + 1)
+    ]
+    
+    water_is_sink = [
+        A_before_B(water_text_x[i], water_text_y[i], is_sink_text_x[i], is_sink_text_y[i], n) for i in range(k + 1)
+    ]
+    
+    return wall_is_stop, wall_is_sink, water_is_stop, water_is_sink
 
 
 # for now, only worry about specifying single pushables (no stacks, only one pushable gets pushed)
@@ -148,7 +187,8 @@ def add_step_constraints(s: Solver,
     y_positions: List[IntNumRef],
     src_x_arr: List[IntNumRef],
     src_y_arr: List[IntNumRef],
-    wall_is_stop: List[BoolRef]
+    wall_is_stop: List[BoolRef],
+    wall_is_sink: List[BoolRef]
 ):
     src_x = src_x_arr[i]
     src_y = src_y_arr[i]
@@ -174,7 +214,7 @@ def add_step_constraints(s: Solver,
     
     # opposite tile must be traversible and reachable
     s.add(If(
-        wall_is_stop[i],
+        Or(wall_is_stop[i], wall_is_sink[i]),
         opp_tile == EMPTY,
         Or(opp_tile == EMPTY, opp_tile == WALL)
     ))
